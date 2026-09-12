@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="Resources/AppIcon-source.png" width="128" alt="Workdeck icon">
+  <img src="docs/icon.png" width="128" alt="Workdeck icon">
 </p>
 
 <h1 align="center">Workdeck</h1>
