@@ -6,6 +6,11 @@
 
 <p align="center">A tiny native macOS menu bar app that lists every VS Code project on your machine and opens any of them in one click.</p>
 
+<p align="center">
+  <a href="https://github.com/kijtiaskp/workdeck/releases/latest"><img src="https://img.shields.io/github/v/release/kijtiaskp/workdeck" alt="Latest release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/kijtiaskp/workdeck" alt="License"></a>
+</p>
+
 ---
 
 No more `cd some/deep/path && code .`. Workdeck scans your projects folder, finds every `.code-workspace` file and Git repository, and shows them grouped in a searchable menu bar popup.
@@ -25,6 +30,18 @@ No more `cd some/deep/path && code .`. Workdeck scans your projects folder, find
 - Swift toolchain: Xcode, or the Xcode Command Line Tools
 
 ## Install
+
+### Download
+
+1. Download `Workdeck-<version>.zip` from the [latest release](https://github.com/kijtiaskp/workdeck/releases/latest). The build runs on Apple Silicon only.
+2. Unzip it and move `Workdeck.app` to `/Applications`.
+3. The app is not notarized, so remove the quarantine flag once before the first launch:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/Workdeck.app
+```
+
+### Build from source
 
 ```sh
 git clone https://github.com/kijtiaskp/workdeck.git
@@ -59,6 +76,10 @@ Items are grouped by their top-level folder under the scan root.
 ## Building with Command Line Tools only
 
 The macOS 27 SDK requires the `SwiftUIMacros` compiler plugin, which ships only with Xcode. When Xcode is not installed, `build-app.sh` automatically builds against the macOS 26.5 SDK from the Command Line Tools if it is available. Set `SDKROOT` yourself to override this.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for what each version adds.
 
 ## License
 

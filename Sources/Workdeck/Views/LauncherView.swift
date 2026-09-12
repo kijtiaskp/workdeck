@@ -8,6 +8,10 @@ struct LauncherView: View {
 
     private let scanner = WorkspaceScanner()
 
+    private var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev"
+    }
+
     private var filteredWorkspaces: [Workspace] {
         let trimmedQuery = query.trimmingCharacters(in: .whitespaces).lowercased()
         guard !trimmedQuery.isEmpty else { return workspaces }
@@ -63,6 +67,10 @@ struct LauncherView: View {
     private var footer: some View {
         HStack {
             Button("Rescan", systemImage: "arrow.clockwise", action: reload)
+            Spacer()
+            Text("v\(appVersion)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
             Spacer()
             Button("Quit") { NSApplication.shared.terminate(nil) }
                 .keyboardShortcut("q")
