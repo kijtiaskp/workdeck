@@ -26,7 +26,12 @@ struct MenuBarLabel: View {
             }
             if let visibleName {
                 Text(visibleName)
+                    .contentTransition(.identity)
             }
+        }
+        .transaction { transaction in
+            transaction.animation = nil
+            transaction.disablesAnimations = true
         }
     }
 }
