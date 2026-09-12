@@ -1,0 +1,65 @@
+<p align="center">
+  <img src="Resources/AppIcon-source.png" width="128" alt="Workdeck icon">
+</p>
+
+<h1 align="center">Workdeck</h1>
+
+<p align="center">A tiny native macOS menu bar app that lists every VS Code project on your machine and opens any of them in one click.</p>
+
+---
+
+No more `cd some/deep/path && code .`. Workdeck scans your projects folder, finds every `.code-workspace` file and Git repository, and shows them grouped in a searchable menu bar popup.
+
+## Features
+
+- **Automatic discovery** of `.code-workspace` files and Git repositories, rescanned every time the popup opens.
+- **No duplicates**: repositories already listed in a `.code-workspace` file's `folders` are hidden, so each project appears once.
+- **Search and open**: type to filter, press Return to open the first match, or click any row.
+- **Native and lightweight**: SwiftUI `MenuBarExtra`, no Dock icon, no Electron, no dependencies.
+- **No `code` CLI required**: projects open through `NSWorkspace` using the VS Code app bundle.
+
+## Requirements
+
+- macOS 14 Sonoma or later
+- Visual Studio Code
+- Swift toolchain: Xcode, or the Xcode Command Line Tools
+
+## Install
+
+```sh
+git clone https://github.com/kijtiaskp/workdeck.git
+cd workdeck
+./scripts/build-app.sh
+```
+
+The script builds a release binary, wraps it in `Workdeck.app`, signs it ad hoc, installs it to `/Applications`, and launches it.
+
+To start Workdeck automatically, add it in **System Settings → General → Login Items**.
+
+## Configuration
+
+Workdeck scans `~/Developer` by default. To scan a different folder:
+
+```sh
+defaults write com.kijtisakp.Workdeck ScanRoot ~/path/to/projects
+```
+
+Then quit Workdeck from its popup and open it again.
+
+## How projects are discovered
+
+Workdeck walks the scan root up to three levels deep and skips hidden folders, `node_modules`, `dist`, `build`, `vendor`, and `Pods`.
+
+1. Every `*.code-workspace` file is listed as a workspace.
+2. Folders referenced by those workspace files are marked as covered and skipped.
+3. Any other folder containing `.git` is listed as a plain folder, and its subfolders are not scanned.
+
+Items are grouped by their top-level folder under the scan root.
+
+## Building with Command Line Tools only
+
+The macOS 27 SDK requires the `SwiftUIMacros` compiler plugin, which ships only with Xcode. When Xcode is not installed, `build-app.sh` automatically builds against the macOS 26.5 SDK from the Command Line Tools if it is available. Set `SDKROOT` yourself to override this.
+
+## License
+
+[MIT](LICENSE)
