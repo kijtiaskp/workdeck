@@ -11,6 +11,10 @@
   <a href="LICENSE"><img src="https://img.shields.io/github/license/kijtiaskp/workdeck" alt="License"></a>
 </p>
 
+<p align="center">
+  <img src="docs/demo.gif" width="480" alt="Workdeck demo: search, switch root folders, view Git status, and open a workspace">
+</p>
+
 ---
 
 No more `cd some/deep/path && code .`. Workdeck scans your projects folder, finds every `.code-workspace` file and Git repository, and shows them grouped in a searchable menu bar popup.

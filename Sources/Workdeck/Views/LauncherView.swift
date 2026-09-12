@@ -53,6 +53,7 @@ struct LauncherView: View {
         }
         .frame(width: 340, height: 480)
         .onAppear(perform: reload)
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in reload() }
         .onChange(of: selectedTab) { refreshGitStatusesIfVisible() }
     }
 

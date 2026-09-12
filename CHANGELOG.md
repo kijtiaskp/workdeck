@@ -3,6 +3,12 @@
 All notable changes to Workdeck are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.1.1] - 2026-09-13
+
+### Fixed
+
+- The list now rescans every time the popup opens. Before, only the first open scanned, so new projects and root folder changes needed Rescan or an app restart.
+
 ## [1.1.0] - 2026-09-13
 
 ### Added
@@ -41,5 +47,6 @@ First public release.
 - The app is signed ad hoc and not notarized, so macOS Gatekeeper blocks the first launch of a downloaded copy.
 - Changing `ScanRoot` takes effect after quitting and reopening the app.
 
+[1.1.1]: https://github.com/kijtiaskp/workdeck/releases/tag/v1.1.1
 [1.1.0]: https://github.com/kijtiaskp/workdeck/releases/tag/v1.1.0
 [1.0.0]: https://github.com/kijtiaskp/workdeck/releases/tag/v1.0.0
