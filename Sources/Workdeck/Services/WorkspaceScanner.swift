@@ -1,22 +1,12 @@
 import Foundation
 
 struct WorkspaceScanner {
-    static let scanRootDefaultsKey = "ScanRoot"
-    static let fallbackRoot = FileManager.default.homeDirectoryForCurrentUser
-        .appendingPathComponent("Developer", isDirectory: true)
-
-    static var configuredRoot: URL {
-        guard let path = UserDefaults.standard.string(forKey: scanRootDefaultsKey) else { return fallbackRoot }
-        return URL(fileURLWithPath: (path as NSString).expandingTildeInPath, isDirectory: true)
-    }
-
     private static let workspaceExtension = "code-workspace"
-    private static let excludedDirectoryNames: Set<String> = ["node_modules", "dist", "build", "vendor", "Pods"]
 
     let root: URL
     let maxDepth: Int
 
-    init(root: URL = configuredRoot, maxDepth: Int = 3) {
+    init(root: URL = ScanRoot.configured, maxDepth: Int = 3) {
         self.root = root.standardizedFileURL
         self.maxDepth = maxDepth
     }
@@ -29,25 +19,24 @@ struct WorkspaceScanner {
     }
 
     private func scanDirectory(_ directory: URL, depth: Int, workspaces: inout [Workspace], coveredPaths: inout Set<String>) {
-        let entries = contents(of: directory)
+        let entries = DirectoryScanning.contents(of: directory)
         let workspaceFiles = entries.filter { $0.pathExtension == Self.workspaceExtension }
-        let isGitRepository = entries.contains { $0.lastPathComponent == ".git" }
 
         for file in workspaceFiles {
             workspaces.append(Workspace(
                 name: file.deletingPathExtension().lastPathComponent,
-                group: group(for: file),
+                group: DirectoryScanning.group(for: file, under: root),
                 url: file,
                 kind: .workspaceFile
             ))
             coveredPaths.formUnion(folderPaths(referencedBy: file))
         }
 
-        if isGitRepository && workspaceFiles.isEmpty {
+        if DirectoryScanning.containsGitRepository(entries) && workspaceFiles.isEmpty {
             if directory != root && !coveredPaths.contains(directory.path) {
                 workspaces.append(Workspace(
                     name: directory.lastPathComponent,
-                    group: group(for: directory),
+                    group: DirectoryScanning.group(for: directory, under: root),
                     url: directory,
                     kind: .folder
                 ))
@@ -57,23 +46,9 @@ struct WorkspaceScanner {
 
         guard depth < maxDepth else { return }
 
-        for subdirectory in entries where isScannableDirectory(subdirectory) && !coveredPaths.contains(subdirectory.path) {
+        for subdirectory in entries where DirectoryScanning.isScannableDirectory(subdirectory) && !coveredPaths.contains(subdirectory.path) {
             scanDirectory(subdirectory, depth: depth + 1, workspaces: &workspaces, coveredPaths: &coveredPaths)
         }
-    }
-
-    private func contents(of directory: URL) -> [URL] {
-        let entries = (try? FileManager.default.contentsOfDirectory(
-            at: directory,
-            includingPropertiesForKeys: [.isDirectoryKey]
-        )) ?? []
-        return entries.map(\.standardizedFileURL)
-    }
-
-    private func isScannableDirectory(_ url: URL) -> Bool {
-        let name = url.lastPathComponent
-        guard !name.hasPrefix("."), !Self.excludedDirectoryNames.contains(name) else { return false }
-        return (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
     }
 
     private func folderPaths(referencedBy workspaceFile: URL) -> [String] {
@@ -95,11 +70,5 @@ struct WorkspaceScanner {
                 : baseDirectory.appendingPathComponent(expandedPath)
             return url.standardizedFileURL.path
         }
-    }
-
-    private func group(for url: URL) -> String {
-        let relativeComponents = url.pathComponents.dropFirst(root.pathComponents.count)
-        guard relativeComponents.count > 1, let first = relativeComponents.first else { return "Other" }
-        return first
     }
 }

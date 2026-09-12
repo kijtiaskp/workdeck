@@ -3,6 +3,18 @@
 All notable changes to Workdeck are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-09-13
+
+### Added
+
+- Git Repos tab that lists every Git repository under the scan root, including repositories that belong to a workspace file.
+- Branch name, uncommitted file count, and commits ahead of or behind the upstream for each repository, loaded in the background with `git status`.
+- Search and Return-to-open work on whichever tab is selected.
+
+### Changed
+
+- A new `ScanRoot` value takes effect the next time the popup opens, without restarting the app.
+
 ## [1.0.0] - 2026-09-13
 
 First public release.
@@ -26,4 +38,5 @@ First public release.
 - The app is signed ad hoc and not notarized, so macOS Gatekeeper blocks the first launch of a downloaded copy.
 - Changing `ScanRoot` takes effect after quitting and reopening the app.
 
+[1.1.0]: https://github.com/kijtiaskp/workdeck/releases/tag/v1.1.0
 [1.0.0]: https://github.com/kijtiaskp/workdeck/releases/tag/v1.0.0

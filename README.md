@@ -19,6 +19,7 @@ No more `cd some/deep/path && code .`. Workdeck scans your projects folder, find
 
 - **Automatic discovery** of `.code-workspace` files and Git repositories, rescanned every time the popup opens.
 - **No duplicates**: repositories already listed in a `.code-workspace` file's `folders` are hidden, so each project appears once.
+- **Git Repos tab**: every Git repository with its branch, uncommitted file count, and commits ahead of or behind the upstream.
 - **Search and open**: type to filter, press Return to open the first match, or click any row.
 - **Native and lightweight**: SwiftUI `MenuBarExtra`, no Dock icon, no Electron, no dependencies.
 - **No `code` CLI required**: projects open through `NSWorkspace` using the VS Code app bundle.
@@ -27,6 +28,7 @@ No more `cd some/deep/path && code .`. Workdeck scans your projects folder, find
 
 - macOS 14 Sonoma or later
 - Visual Studio Code
+- Git at `/usr/bin/git`, included with the Xcode Command Line Tools
 - Swift toolchain: Xcode, or the Xcode Command Line Tools
 
 ## Install
@@ -61,7 +63,7 @@ Workdeck scans `~/Developer` by default. To scan a different folder:
 defaults write com.kijtisakp.Workdeck ScanRoot ~/path/to/projects
 ```
 
-Then quit Workdeck from its popup and open it again.
+The new folder is used the next time the popup opens.
 
 ## How projects are discovered
 
@@ -72,6 +74,8 @@ Workdeck walks the scan root up to three levels deep and skips hidden folders, `
 3. Any other folder containing `.git` is listed as a plain folder, and its subfolders are not scanned.
 
 Items are grouped by their top-level folder under the scan root.
+
+The **Git Repos** tab uses the same scan root and exclusions, but lists every folder that contains `.git`, including repositories inside other repositories or covered by a workspace file. Status is read with `git status --porcelain --branch` in the background when the tab is shown.
 
 ## Building with Command Line Tools only
 
