@@ -13,6 +13,7 @@ struct LauncherView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("SelectedScanRoot") private var selectedRootPath = allRootsSelection
     @AppStorage(MenuBarLabelStyle.defaultsKey) private var labelStyle: MenuBarLabelStyle = .icon
+    @AppStorage(MenuBarNameLength.defaultsKey) private var nameLength: MenuBarNameLength = .full
     @State private var selectedTab: Tab = .workspaces
     @State private var query = ""
     @State private var scanRoots: [URL] = []
@@ -155,6 +156,14 @@ struct LauncherView: View {
                 }
             }
             .pickerStyle(.inline)
+
+            Picker("Name Length", selection: $nameLength) {
+                ForEach(MenuBarNameLength.allCases) { length in
+                    Text(length.title).tag(length)
+                }
+            }
+            .pickerStyle(.inline)
+            .disabled(!labelStyle.showsText)
 
             if labelStyle.showsText && !AccessibilityPermission.isGranted {
                 Divider()

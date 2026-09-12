@@ -24,6 +24,6 @@ pkill -x "$APP_NAME" || true
 while pgrep -x "$APP_NAME" >/dev/null; do sleep 0.2; done
 rm -rf "$INSTALL_PATH"
 cp -R "$APP_BUNDLE" "$INSTALL_PATH"
-open "$INSTALL_PATH"
+open "$INSTALL_PATH" || { sleep 1; open "$INSTALL_PATH"; }
 
 echo "Installed $INSTALL_PATH"

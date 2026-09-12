@@ -10,7 +10,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - The menu bar can show the workspace or folder of the focused VS Code window, so it is clear which project you are in when many VS Code windows are open.
 - Settings menu in the popup footer to show the menu bar as Icon, Text, or Icon and Text.
 - The name comes from the VS Code window title and is matched against scanned projects, so titles with a profile name still resolve correctly.
-- The label keeps a fixed width and shortens names to 12 characters, so switching windows does not move other menu bar items or push Workdeck into the hidden overflow area.
+- The label fits the full project name. A Name Length option in the gear menu shortens long names to 24, 16, or 12 characters when a crowded menu bar hides the item.
 
 ### Notes
 

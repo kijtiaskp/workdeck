@@ -7,7 +7,7 @@ final class VSCodeWindowTracker: ObservableObject {
     private static let knownNamesLifetime: TimeInterval = 60
 
     @Published private(set) var activeProjectName: String?
-    @Published private(set) var knownNames: Set<String> = []
+    private var knownNames: Set<String> = []
 
     private var pollTimer: Timer?
     private var workspaceObservers: [NSObjectProtocol] = []
@@ -67,10 +67,7 @@ final class VSCodeWindowTracker: ObservableObject {
         let roots = ScanRoots.all
         let workspaceNames = roots.flatMap { WorkspaceScanner(root: $0).scan().map(\.name) }
         let repositoryNames = roots.flatMap { GitRepositoryScanner(root: $0).scan().map(\.name) }
-        let names = Set(workspaceNames + repositoryNames)
-        if names != knownNames {
-            knownNames = names
-        }
+        knownNames = Set(workspaceNames + repositoryNames)
         knownNamesUpdatedAt = Date()
     }
 }
