@@ -12,6 +12,7 @@ struct LauncherView: View {
 
     @Environment(\.dismiss) private var dismiss
     @AppStorage("SelectedScanRoot") private var selectedRootPath = allRootsSelection
+    @AppStorage(MenuBarLabelStyle.defaultsKey) private var labelStyle: MenuBarLabelStyle = .icon
     @State private var selectedTab: Tab = .workspaces
     @State private var query = ""
     @State private var scanRoots: [URL] = []
@@ -55,6 +56,11 @@ struct LauncherView: View {
         .onAppear(perform: reload)
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in reload() }
         .onChange(of: selectedTab) { refreshGitStatusesIfVisible() }
+        .onChange(of: labelStyle) {
+            if labelStyle.showsText && !AccessibilityPermission.isGranted {
+                AccessibilityPermission.request()
+            }
+        }
     }
 
     private var header: some View {
@@ -133,11 +139,32 @@ struct LauncherView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Spacer()
+            settingsMenu
             Button("Quit") { NSApplication.shared.terminate(nil) }
                 .keyboardShortcut("q")
         }
         .buttonStyle(.borderless)
         .padding(10)
+    }
+
+    private var settingsMenu: some View {
+        Menu {
+            Picker("Menu Bar", selection: $labelStyle) {
+                ForEach(MenuBarLabelStyle.allCases) { style in
+                    Text(style.title).tag(style)
+                }
+            }
+            .pickerStyle(.inline)
+
+            if labelStyle.showsText && !AccessibilityPermission.isGranted {
+                Divider()
+                Button("Allow Accessibility Access…", action: AccessibilityPermission.request)
+            }
+        } label: {
+            Image(systemName: "gearshape")
+        }
+        .menuIndicator(.hidden)
+        .fixedSize()
     }
 
     private func isVisible(root: URL, searchText: String) -> Bool {

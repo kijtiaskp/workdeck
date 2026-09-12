@@ -2,19 +2,15 @@ import SwiftUI
 
 @main
 struct WorkdeckApp: App {
+    @AppStorage(MenuBarLabelStyle.defaultsKey) private var labelStyle: MenuBarLabelStyle = .icon
+    @StateObject private var windowTracker = VSCodeWindowTracker()
+
     var body: some Scene {
         MenuBarExtra {
             LauncherView()
         } label: {
-            Image(nsImage: Self.menuBarIcon)
+            MenuBarLabel(style: labelStyle, projectName: windowTracker.activeProjectName)
         }
         .menuBarExtraStyle(.window)
     }
-
-    private static let menuBarIcon: NSImage = {
-        let image = NSImage(named: "MenuBarIcon")
-            ?? NSImage(systemSymbolName: "chevron.left.forwardslash.chevron.right", accessibilityDescription: "Workspaces")!
-        image.isTemplate = true
-        return image
-    }()
 }

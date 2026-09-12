@@ -3,6 +3,18 @@
 All notable changes to Workdeck are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-09-13
+
+### Added
+
+- The menu bar can show the workspace or folder of the focused VS Code window, so it is clear which project you are in when many VS Code windows are open.
+- Settings menu in the popup footer to show the menu bar as Icon, Text, or Icon and Text.
+- The name comes from the VS Code window title and is matched against scanned projects, so titles with a profile name still resolve correctly.
+
+### Notes
+
+- Text modes need Accessibility access to read VS Code window titles. Workdeck asks for it when a text mode is selected.
+
 ## [1.1.1] - 2026-09-13
 
 ### Fixed
@@ -47,6 +59,7 @@ First public release.
 - The app is signed ad hoc and not notarized, so macOS Gatekeeper blocks the first launch of a downloaded copy.
 - Changing `ScanRoot` takes effect after quitting and reopening the app.
 
+[1.2.0]: https://github.com/kijtiaskp/workdeck/releases/tag/v1.2.0
 [1.1.1]: https://github.com/kijtiaskp/workdeck/releases/tag/v1.1.1
 [1.1.0]: https://github.com/kijtiaskp/workdeck/releases/tag/v1.1.0
 [1.0.0]: https://github.com/kijtiaskp/workdeck/releases/tag/v1.0.0

@@ -25,6 +25,7 @@ No more `cd some/deep/path && code .`. Workdeck scans your projects folder, find
 - **No duplicates**: repositories already listed in a `.code-workspace` file's `folders` are hidden, so each project appears once.
 - **Git Repos tab**: every Git repository with its branch, uncommitted file count, and commits ahead of or behind the upstream.
 - **Multiple root folders**: scan several project folders, and show all of them or one at a time.
+- **Current project in the menu bar**: optionally show which workspace or folder the focused VS Code window has open.
 - **Search and open**: type to filter, press Return to open the first match, or click any row.
 - **Native and lightweight**: SwiftUI `MenuBarExtra`, no Dock icon, no Electron, no dependencies.
 - **No `code` CLI required**: projects open through `NSWorkspace` using the VS Code app bundle.
@@ -77,6 +78,20 @@ defaults write com.kijtisakp.Workdeck ScanRoots -array ~/work ~/personal
 ```
 
 Changes apply the next time the popup opens.
+
+## Menu bar label
+
+Open the gear menu in the popup footer to choose how the menu bar item looks:
+
+- **Icon** shows only the Workdeck icon. This is the default.
+- **Text** shows the name of the workspace or folder in the focused VS Code window.
+- **Icon and Text** shows both.
+
+The name updates when you switch VS Code windows and stays on the last VS Code window while you use other apps.
+
+Text modes read VS Code window titles, so macOS asks you to allow Workdeck in **System Settings → Privacy & Security → Accessibility**. Builds from `build-app.sh` are signed ad hoc, so after rebuilding you may need to remove Workdeck from that list and allow it again.
+
+The name is taken from the default VS Code window title. If you changed `window.title`, keep `${rootName}` in it.
 
 ## How projects are discovered
 
