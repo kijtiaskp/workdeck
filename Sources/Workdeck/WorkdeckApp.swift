@@ -9,7 +9,7 @@ struct WorkdeckApp: App {
         MenuBarExtra {
             LauncherView()
         } label: {
-            MenuBarLabel(style: labelStyle, projectName: windowTracker.activeProjectName)
+            MenuBarLabel(style: labelStyle, projectName: windowTracker.activeProjectName, knownNames: windowTracker.knownNames)
         }
         .menuBarExtraStyle(.window)
     }

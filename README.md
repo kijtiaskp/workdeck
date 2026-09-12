@@ -89,6 +89,8 @@ Open the gear menu in the popup footer to choose how the menu bar item looks:
 
 The name updates when you switch VS Code windows and stays on the last VS Code window while you use other apps.
 
+The label keeps a fixed width sized for your longest project name, and names longer than 12 characters are shortened. macOS hides menu bar items that do not fit next to the notch, so a fixed, compact width keeps Workdeck visible when VS Code shows its full menu.
+
 Text modes read VS Code window titles, so macOS asks you to allow Workdeck in **System Settings → Privacy & Security → Accessibility**. Builds from `build-app.sh` are signed ad hoc, so after rebuilding you may need to remove Workdeck from that list and allow it again.
 
 The name is taken from the default VS Code window title. If you changed `window.title`, keep `${rootName}` in it.

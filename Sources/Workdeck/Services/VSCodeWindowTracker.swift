@@ -7,13 +7,15 @@ final class VSCodeWindowTracker: ObservableObject {
     private static let knownNamesLifetime: TimeInterval = 60
 
     @Published private(set) var activeProjectName: String?
+    @Published private(set) var knownNames: Set<String> = []
 
     private var pollTimer: Timer?
     private var workspaceObservers: [NSObjectProtocol] = []
-    private var knownNames: Set<String> = []
     private var knownNamesUpdatedAt = Date.distantPast
 
     init() {
+        refreshKnownNamesIfStale()
+
         pollTimer = Timer.scheduledTimer(withTimeInterval: Self.pollInterval, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.refresh() }
         }
@@ -39,10 +41,11 @@ final class VSCodeWindowTracker: ObservableObject {
               let title = focusedWindowTitle(of: frontmostApplication.processIdentifier)
         else { return }
 
-        let projectName = VSCodeWindowTitle.projectName(from: title, knownNames: currentKnownNames())
-        if projectName != activeProjectName {
-            activeProjectName = projectName
-        }
+        refreshKnownNamesIfStale()
+        guard let projectName = VSCodeWindowTitle.projectName(from: title, knownNames: knownNames),
+              projectName != activeProjectName
+        else { return }
+        activeProjectName = projectName
     }
 
     private func focusedWindowTitle(of processIdentifier: pid_t) -> String? {
@@ -58,14 +61,16 @@ final class VSCodeWindowTracker: ObservableObject {
         return title as? String
     }
 
-    private func currentKnownNames() -> Set<String> {
-        guard Date().timeIntervalSince(knownNamesUpdatedAt) > Self.knownNamesLifetime else { return knownNames }
+    private func refreshKnownNamesIfStale() {
+        guard Date().timeIntervalSince(knownNamesUpdatedAt) > Self.knownNamesLifetime else { return }
 
         let roots = ScanRoots.all
         let workspaceNames = roots.flatMap { WorkspaceScanner(root: $0).scan().map(\.name) }
         let repositoryNames = roots.flatMap { GitRepositoryScanner(root: $0).scan().map(\.name) }
-        knownNames = Set(workspaceNames + repositoryNames)
+        let names = Set(workspaceNames + repositoryNames)
+        if names != knownNames {
+            knownNames = names
+        }
         knownNamesUpdatedAt = Date()
-        return knownNames
     }
 }
