@@ -20,6 +20,7 @@ No more `cd some/deep/path && code .`. Workdeck scans your projects folder, find
 - **Automatic discovery** of `.code-workspace` files and Git repositories, rescanned every time the popup opens.
 - **No duplicates**: repositories already listed in a `.code-workspace` file's `folders` are hidden, so each project appears once.
 - **Git Repos tab**: every Git repository with its branch, uncommitted file count, and commits ahead of or behind the upstream.
+- **Multiple root folders**: scan several project folders, and show all of them or one at a time.
 - **Search and open**: type to filter, press Return to open the first match, or click any row.
 - **Native and lightweight**: SwiftUI `MenuBarExtra`, no Dock icon, no Electron, no dependencies.
 - **No `code` CLI required**: projects open through `NSWorkspace` using the VS Code app bundle.
@@ -57,17 +58,25 @@ To start Workdeck automatically, add it in **System Settings → General → Log
 
 ## Configuration
 
-Workdeck scans `~/Developer` by default. To scan a different folder:
+Workdeck scans `~/Developer` by default. Use the folder menu next to the search field to manage root folders:
+
+- **All Folders** or a single folder name chooses what the list shows.
+- **Add Folder…** opens a folder picker. You can select several folders at once.
+- **Remove Folder** removes a root from the list. Your files are not touched.
+
+When several roots are shown together, each section title starts with its root folder name.
+
+Root folders can also be set from the terminal:
 
 ```sh
-defaults write com.kijtisakp.Workdeck ScanRoot ~/path/to/projects
+defaults write com.kijtisakp.Workdeck ScanRoots -array ~/work ~/personal
 ```
 
-The new folder is used the next time the popup opens.
+Changes apply the next time the popup opens.
 
 ## How projects are discovered
 
-Workdeck walks the scan root up to three levels deep and skips hidden folders, `node_modules`, `dist`, `build`, `vendor`, and `Pods`.
+Workdeck walks each root folder up to three levels deep and skips hidden folders, `node_modules`, `dist`, `build`, `vendor`, and `Pods`.
 
 1. Every `*.code-workspace` file is listed as a workspace.
 2. Folders referenced by those workspace files are marked as covered and skipped.
@@ -75,7 +84,7 @@ Workdeck walks the scan root up to three levels deep and skips hidden folders, `
 
 Items are grouped by their top-level folder under the scan root.
 
-The **Git Repos** tab uses the same scan root and exclusions, but lists every folder that contains `.git`, including repositories inside other repositories or covered by a workspace file. Status is read with `git status --porcelain --branch` in the background when the tab is shown.
+The **Git Repos** tab uses the same root folders and exclusions, but lists every folder that contains `.git`, including repositories inside other repositories or covered by a workspace file. Status is read with `git status --porcelain --branch` in the background when the tab is shown.
 
 ## Building with Command Line Tools only
 

@@ -4,7 +4,7 @@ struct GitRepositoryScanner {
     let root: URL
     let maxDepth: Int
 
-    init(root: URL = ScanRoot.configured, maxDepth: Int = 3) {
+    init(root: URL, maxDepth: Int = 3) {
         self.root = root.standardizedFileURL
         self.maxDepth = maxDepth
     }
@@ -22,6 +22,7 @@ struct GitRepositoryScanner {
             repositories.append(GitRepository(
                 name: directory.lastPathComponent,
                 group: DirectoryScanning.group(for: directory, under: root),
+                root: root,
                 url: directory
             ))
         }

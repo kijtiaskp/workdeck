@@ -8,10 +8,11 @@ struct Workspace: Identifiable, Hashable {
 
     let name: String
     let group: String
+    let root: URL
     let url: URL
     let kind: Kind
 
     var id: URL { url }
 
-    var searchText: String { "\(group)/\(name)".lowercased() }
+    var searchText: String { "\(root.lastPathComponent)/\(group)/\(name)".lowercased() }
 }

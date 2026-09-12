@@ -7,13 +7,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
-- Git Repos tab that lists every Git repository under the scan root, including repositories that belong to a workspace file.
+- Git Repos tab that lists every Git repository under the root folders, including repositories that belong to a workspace file.
 - Branch name, uncommitted file count, and commits ahead of or behind the upstream for each repository, loaded in the background with `git status`.
 - Search and Return-to-open work on whichever tab is selected.
+- Multiple root folders. A folder menu next to the search field shows every root or a single one, adds folders with a folder picker, and removes them.
+- Section titles include the root folder name when several roots are shown together.
 
 ### Changed
 
-- A new `ScanRoot` value takes effect the next time the popup opens, without restarting the app.
+- Root folders are stored in the `ScanRoots` array. A `ScanRoot` value from 1.0.0 is still used until a root is first added or removed.
+- Root folder changes take effect the next time the popup opens, without restarting the app.
 
 ## [1.0.0] - 2026-09-13
 

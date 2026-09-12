@@ -6,7 +6,7 @@ struct WorkspaceScanner {
     let root: URL
     let maxDepth: Int
 
-    init(root: URL = ScanRoot.configured, maxDepth: Int = 3) {
+    init(root: URL, maxDepth: Int = 3) {
         self.root = root.standardizedFileURL
         self.maxDepth = maxDepth
     }
@@ -26,6 +26,7 @@ struct WorkspaceScanner {
             workspaces.append(Workspace(
                 name: file.deletingPathExtension().lastPathComponent,
                 group: DirectoryScanning.group(for: file, under: root),
+                root: root,
                 url: file,
                 kind: .workspaceFile
             ))
@@ -37,6 +38,7 @@ struct WorkspaceScanner {
                 workspaces.append(Workspace(
                     name: directory.lastPathComponent,
                     group: DirectoryScanning.group(for: directory, under: root),
+                    root: root,
                     url: directory,
                     kind: .folder
                 ))

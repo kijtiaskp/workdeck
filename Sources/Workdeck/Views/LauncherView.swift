@@ -8,9 +8,13 @@ struct LauncherView: View {
         var id: Self { self }
     }
 
+    private static let allRootsSelection = ""
+
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("SelectedScanRoot") private var selectedRootPath = allRootsSelection
     @State private var selectedTab: Tab = .workspaces
     @State private var query = ""
+    @State private var scanRoots: [URL] = []
     @State private var workspaces: [Workspace] = []
     @State private var gitRepositories: [GitRepository] = []
     @State private var gitStatuses: [URL: GitStatus] = [:]
@@ -21,16 +25,22 @@ struct LauncherView: View {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev"
     }
 
+    private var isShowingAllRoots: Bool { selectedRootPath == Self.allRootsSelection }
+
+    private var selectedRootTitle: String {
+        isShowingAllRoots ? "All" : URL(fileURLWithPath: selectedRootPath).lastPathComponent
+    }
+
     private var normalizedQuery: String {
         query.trimmingCharacters(in: .whitespaces).lowercased()
     }
 
-    private var filteredWorkspaces: [Workspace] {
-        normalizedQuery.isEmpty ? workspaces : workspaces.filter { $0.searchText.contains(normalizedQuery) }
+    private var visibleWorkspaces: [Workspace] {
+        workspaces.filter { isVisible(root: $0.root, searchText: $0.searchText) }
     }
 
-    private var filteredGitRepositories: [GitRepository] {
-        normalizedQuery.isEmpty ? gitRepositories : gitRepositories.filter { $0.searchText.contains(normalizedQuery) }
+    private var visibleGitRepositories: [GitRepository] {
+        gitRepositories.filter { isVisible(root: $0.root, searchText: $0.searchText) }
     }
 
     var body: some View {
@@ -56,23 +66,59 @@ struct LauncherView: View {
             .pickerStyle(.segmented)
             .labelsHidden()
 
-            TextField("Search", text: $query)
-                .textFieldStyle(.roundedBorder)
-                .focused($isSearchFocused)
-                .onSubmit(openFirstMatch)
+            HStack(spacing: 6) {
+                rootMenu
+                TextField("Search", text: $query)
+                    .textFieldStyle(.roundedBorder)
+                    .focused($isSearchFocused)
+                    .onSubmit(openFirstMatch)
+            }
         }
         .padding(10)
+    }
+
+    private var rootMenu: some View {
+        Menu {
+            Picker("Show", selection: $selectedRootPath) {
+                Text("All Folders").tag(Self.allRootsSelection)
+                ForEach(scanRoots, id: \.self) { root in
+                    Text(root.lastPathComponent).tag(root.path)
+                }
+            }
+            .pickerStyle(.inline)
+
+            Divider()
+
+            Button("Add Folder…", action: addScanRoots)
+            Menu("Remove Folder") {
+                ForEach(scanRoots, id: \.self) { root in
+                    Button((root.path as NSString).abbreviatingWithTildeInPath) { removeScanRoot(root) }
+                }
+            }
+            .disabled(scanRoots.isEmpty)
+        } label: {
+            Label(selectedRootTitle, systemImage: "folder")
+        }
+        .fixedSize()
     }
 
     @ViewBuilder
     private var content: some View {
         switch selectedTab {
         case .workspaces:
-            GroupedList(items: filteredWorkspaces, groupName: \.group, onSelect: { open($0.url) }) { workspace in
+            GroupedList(
+                items: visibleWorkspaces,
+                groupName: { sectionName(group: $0.group, root: $0.root) },
+                onSelect: { open($0.url) }
+            ) { workspace in
                 WorkspaceRow(workspace: workspace)
             }
         case .gitRepositories:
-            GroupedList(items: filteredGitRepositories, groupName: \.group, onSelect: { open($0.url) }) { repository in
+            GroupedList(
+                items: visibleGitRepositories,
+                groupName: { sectionName(group: $0.group, root: $0.root) },
+                onSelect: { open($0.url) }
+            ) { repository in
                 GitRepositoryRow(repository: repository, status: gitStatuses[repository.url])
             }
         }
@@ -93,11 +139,43 @@ struct LauncherView: View {
         .padding(10)
     }
 
+    private func isVisible(root: URL, searchText: String) -> Bool {
+        let matchesRoot = isShowingAllRoots || root.path == selectedRootPath
+        let matchesQuery = normalizedQuery.isEmpty || searchText.contains(normalizedQuery)
+        return matchesRoot && matchesQuery
+    }
+
+    private func sectionName(group: String, root: URL) -> String {
+        isShowingAllRoots && scanRoots.count > 1 ? "\(root.lastPathComponent) › \(group)" : group
+    }
+
     private func reload() {
-        workspaces = WorkspaceScanner().scan()
-        gitRepositories = GitRepositoryScanner().scan()
+        scanRoots = ScanRoots.all
+        if !scanRoots.contains(where: { $0.path == selectedRootPath }) {
+            selectedRootPath = Self.allRootsSelection
+        }
+        workspaces = scanRoots.flatMap { WorkspaceScanner(root: $0).scan() }
+        gitRepositories = scanRoots.flatMap { GitRepositoryScanner(root: $0).scan() }
         isSearchFocused = true
         refreshGitStatusesIfVisible()
+    }
+
+    private func addScanRoots() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = true
+        panel.prompt = "Add"
+        panel.message = "Choose folders that contain your projects"
+        NSApp.activate(ignoringOtherApps: true)
+        guard panel.runModal() == .OK else { return }
+        ScanRoots.add(panel.urls)
+        reload()
+    }
+
+    private func removeScanRoot(_ root: URL) {
+        ScanRoots.remove(root)
+        reload()
     }
 
     private func refreshGitStatusesIfVisible() {
@@ -119,8 +197,8 @@ struct LauncherView: View {
 
     private func openFirstMatch() {
         let firstMatchURL = switch selectedTab {
-        case .workspaces: filteredWorkspaces.first?.url
-        case .gitRepositories: filteredGitRepositories.first?.url
+        case .workspaces: visibleWorkspaces.first?.url
+        case .gitRepositories: visibleGitRepositories.first?.url
         }
         guard let firstMatchURL else { return }
         open(firstMatchURL)
