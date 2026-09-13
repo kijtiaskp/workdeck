@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workdeck — Open any VS Code project from the macOS menu bar</title>
+<meta name="description" content="Workdeck is a free, native macOS menu bar app that finds every VS Code workspace and Git repository on your Mac and opens any of them in one click. SwiftUI, no Electron, no dependencies.">
+<link rel="canonical" href="https://kijtiaskp.github.io/workdeck/">
+<link rel="icon" href="icon.png">
+<meta name="google-site-verification" content="Ao9JBQecILUIPd-LLwL3TNeS8J0mu89QwsXcP6URFK4">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kijtiaskp.github.io/workdeck/">
+<meta property="og:title" content="Workdeck — VS Code projects in your menu bar">
+<meta property="og:description" content="A tiny native macOS menu bar app that lists every VS Code project on your Mac and opens it in one click.">
+<meta property="og:image" content="https://kijtiaskp.github.io/workdeck/icon.png">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Workdeck",
+  "description": "Native macOS menu bar app that lists every VS Code project and opens it in one click.",
+  "url": "https://kijtiaskp.github.io/workdeck/",
+  "image": "https://kijtiaskp.github.io/workdeck/icon.png",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "macOS 14 or later",
+  "downloadUrl": "https://github.com/kijtiaskp/workdeck/releases/latest",
+  "license": "https://opensource.org/licenses/MIT",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
+<style>
+:root {
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --text: #1d1d1f;
+  --muted: #6e6e73;
+  --border: #d2d2d7;
+  --accent: #0071e3;
+  --accent-text: #ffffff;
+  --code-bg: #ececf0;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f0f12;
+    --surface: #1c1c21;
+    --text: #f5f5f7;
+    --muted: #a1a1a6;
+    --border: #2e2e35;
+    --accent: #2997ff;
+    --accent-text: #0f0f12;
+    --code-bg: #26262c;
+  }
+}
+* { box-sizing: border-box; margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 17px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+main { max-width: 880px; margin: 0 auto; padding: 64px 16px 48px; }
+.hero { text-align: center; }
+.hero img.icon { width: 112px; height: 112px; }
+h1 { font-size: clamp(2.4rem, 7vw, 3.6rem); letter-spacing: -0.02em; margin-top: 16px; }
+.tagline { color: var(--muted); font-size: 1.2rem; max-width: 560px; margin: 12px auto 0; }
+.actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 28px; }
+.button {
+  display: inline-block; padding: 12px 22px; border-radius: 980px;
+  font-weight: 600; text-decoration: none; border: 1px solid var(--border); color: var(--text);
+}
+.button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+.meta { color: var(--muted); font-size: 0.9rem; margin-top: 12px; }
+.demo { display: block; width: 100%; max-width: 480px; height: auto; margin: 48px auto 0; border-radius: 14px; }
+h2 { font-size: 1.6rem; letter-spacing: -0.01em; margin: 64px 0 20px; }
+.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; padding: 0; list-style: none; }
+.features li { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; }
+.features strong { display: block; margin-bottom: 4px; }
+.features span { color: var(--muted); font-size: 0.95rem; }
+ol { padding-left: 1.3em; }
+ol li + li { margin-top: 10px; }
+code, pre { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.88em; }
+code { background: var(--code-bg); padding: 2px 6px; border-radius: 6px; }
+pre { background: var(--code-bg); padding: 14px 16px; border-radius: 10px; overflow-x: auto; margin-top: 8px; }
+pre code { background: none; padding: 0; }
+.requirements { color: var(--muted); margin-top: 16px; }
+a { color: var(--accent); }
+footer { color: var(--muted); font-size: 0.9rem; text-align: center; padding: 48px 16px 64px; }
+</style>
+</head>
+<body>
+<main>
+  <section class="hero">
+    <img class="icon" src="icon.png" alt="Workdeck icon" width="112" height="112">
+    <h1>Workdeck</h1>
+    <p class="tagline">A tiny native macOS menu bar app that lists every VS Code project on your Mac and opens any of them in one click.</p>
+    <div class="actions">
+      <a class="button primary" href="https://github.com/kijtiaskp/workdeck/releases/latest">Download for macOS</a>
+      <a class="button" href="https://github.com/kijtiaskp/workdeck">View on GitHub</a>
+    </div>
+    <p class="meta">Free and open source · MIT · macOS 14+ · Apple Silicon</p>
+    <img class="demo" src="demo.gif" width="640" height="751" alt="Workdeck demo: search, switch root folders, view Git status, and open a workspace">
+  </section>
+
+  <h2>No more <code>cd some/deep/path &amp;&amp; code .</code></h2>
+  <ul class="features">
+    <li><strong>Automatic discovery</strong><span>Finds <code>.code-workspace</code> files and Git repositories, rescanned every time the popup opens.</span></li>
+    <li><strong>No duplicates</strong><span>Repositories already listed in a workspace file are hidden, so each project appears once.</span></li>
+    <li><strong>Git Repos tab</strong><span>Branch, uncommitted file count, and commits ahead of or behind the upstream for every repository.</span></li>
+    <li><strong>Multiple root folders</strong><span>Scan several project folders and show all of them or one at a time.</span></li>
+    <li><strong>Current project in the menu bar</strong><span>Optionally show which workspace the focused VS Code window has open.</span></li>
+    <li><strong>Native and lightweight</strong><span>SwiftUI <code>MenuBarExtra</code>, no Dock icon, no Electron, no <code>code</code> CLI required.</span></li>
+  </ul>
+
+  <h2>Install</h2>
+  <ol>
+    <li>Download <code>Workdeck-&lt;version&gt;.zip</code> from the <a href="https://github.com/kijtiaskp/workdeck/releases/latest">latest release</a>.</li>
+    <li>Unzip it and move <code>Workdeck.app</code> to <code>/Applications</code>.</li>
+    <li>The app is not notarized, so remove the quarantine flag once before the first launch:
+      <pre><code>xattr -dr com.apple.quarantine /Applications/Workdeck.app</code></pre>
+    </li>
+  </ol>
+  <p class="requirements">Requires macOS 14 Sonoma or later, Visual Studio Code, and Git from the Xcode Command Line Tools. To build from source, see the <a href="https://github.com/kijtiaskp/workdeck#build-from-source">README</a>.</p>
+</main>
+<footer>
+  Workdeck is released under the <a href="https://github.com/kijtiaskp/workdeck/blob/main/LICENSE">MIT License</a>.
+  <a href="https://github.com/kijtiaskp/workdeck/blob/main/CHANGELOG.md">Changelog</a>
+</footer>
+</body>
+</html>
