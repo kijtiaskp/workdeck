@@ -3,7 +3,7 @@
 All notable changes to Workdeck are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.3.0] - 2026-09-29
 
 ### Added
 
@@ -15,6 +15,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Portless state is read from `~/.portless` or `/tmp/portless`, including the proxy port, HTTPS setting, and TLD; unreadable routes are skipped.
 - A 48-second intro video generated from code (`video/`), saved to `docs/intro.mp4`.
 - Edit Environment Links… in the row context menu creates and opens `.workdeck.json`.
+
+### Notes
+
+- Run and database detection rely on portless 0.15 state files, `lsof`, and your login shell `PATH`. Database environments are a best guess from host names and `.env` files.
 
 ## [1.2.0] - 2026-09-13
 
@@ -73,6 +77,7 @@ First public release.
 - The app is signed ad hoc and not notarized, so macOS Gatekeeper blocks the first launch of a downloaded copy.
 - Changing `ScanRoot` takes effect after quitting and reopening the app.
 
+[1.3.0]: https://github.com/kijtiaskp/workdeck/releases/tag/v1.3.0
 [1.2.0]: https://github.com/kijtiaskp/workdeck/releases/tag/v1.2.0
 [1.1.1]: https://github.com/kijtiaskp/workdeck/releases/tag/v1.1.1
 [1.1.0]: https://github.com/kijtiaskp/workdeck/releases/tag/v1.1.0
