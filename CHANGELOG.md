@@ -3,6 +3,23 @@
 All notable changes to Workdeck are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] - 2026-09-29
+
+### Added
+
+- Status tab that shows the prod and dev URLs of each project from a `.workdeck.json` file, whether its portless apps are running, and which database environment each running backend is connected to.
+- Run and stop buttons for portless apps in the Status tab, with each app's output logged to `~/Library/Logs/Workdeck`.
+- Apps that exit before their route appears, or do not start within 30 seconds, are marked Failed with a link to their log.
+- The Status tab explains how to add environment links when nothing is configured.
+- Package scripts run with the package manager from the nearest lockfile (bun, pnpm, yarn, or npm).
+- Portless state is read from `~/.portless` or `/tmp/portless`, including the proxy port, HTTPS setting, and TLD; unreadable routes are skipped.
+- A 48-second intro video generated from code (`video/`), saved to `docs/intro.mp4`.
+- Edit Environment Links… in the row context menu creates and opens `.workdeck.json`.
+
+### Notes
+
+- Run and database detection rely on portless 0.15 state files, `lsof`, and your login shell `PATH`. Database environments are a best guess from host names and `.env` files.
+
 ## [1.2.0] - 2026-09-13
 
 ### Added
@@ -60,6 +77,7 @@ First public release.
 - The app is signed ad hoc and not notarized, so macOS Gatekeeper blocks the first launch of a downloaded copy.
 - Changing `ScanRoot` takes effect after quitting and reopening the app.
 
+[1.3.0]: https://github.com/kijtiaskp/workdeck/releases/tag/v1.3.0
 [1.2.0]: https://github.com/kijtiaskp/workdeck/releases/tag/v1.2.0
 [1.1.1]: https://github.com/kijtiaskp/workdeck/releases/tag/v1.1.1
 [1.1.0]: https://github.com/kijtiaskp/workdeck/releases/tag/v1.1.0

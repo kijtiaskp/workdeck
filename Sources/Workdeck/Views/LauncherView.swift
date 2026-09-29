@@ -4,11 +4,16 @@ struct LauncherView: View {
     enum Tab: String, CaseIterable, Identifiable {
         case workspaces = "Workspaces"
         case gitRepositories = "Git Repos"
+        case status = "Status"
 
         var id: Self { self }
     }
 
     private static let allRootsSelection = ""
+    private static let statusEmptyDescription = """
+        Right-click a project in Workspaces and choose Edit Environment Links… to add prod and dev URLs, \
+        or add a portless.json to an app folder to run it from here.
+        """
 
     @Environment(\.dismiss) private var dismiss
     @AppStorage("SelectedScanRoot") private var selectedRootPath = allRootsSelection
@@ -21,6 +26,10 @@ struct LauncherView: View {
     @State private var gitRepositories: [GitRepository] = []
     @State private var gitStatuses: [URL: GitStatus] = [:]
     @State private var gitStatusTask: Task<Void, Never>?
+    @State private var projectStatuses: [URL: ProjectStatus] = [:]
+    @State private var projectStatusTask: Task<Void, Never>?
+    @State private var pendingAppNames: Set<String> = []
+    @State private var failedAppNames: Set<String> = []
     @FocusState private var isSearchFocused: Bool
 
     private var appVersion: String {
@@ -45,6 +54,13 @@ struct LauncherView: View {
         gitRepositories.filter { isVisible(root: $0.root, searchText: $0.searchText) }
     }
 
+    private var visibleProjectStatuses: [(workspace: Workspace, status: ProjectStatus)] {
+        visibleWorkspaces.compactMap { workspace in
+            guard let status = projectStatuses[workspace.url], !status.isEmpty else { return nil }
+            return (workspace, status)
+        }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -56,7 +72,10 @@ struct LauncherView: View {
         .frame(width: 340, height: 480)
         .onAppear(perform: reload)
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in reload() }
-        .onChange(of: selectedTab) { refreshGitStatusesIfVisible() }
+        .onChange(of: selectedTab) {
+            refreshGitStatusesIfVisible()
+            refreshProjectStatusesIfVisible()
+        }
         .onChange(of: labelStyle) {
             if labelStyle.showsText && !AccessibilityPermission.isGranted {
                 AccessibilityPermission.request()
@@ -120,6 +139,7 @@ struct LauncherView: View {
                 onSelect: { open($0.url) }
             ) { workspace in
                 WorkspaceRow(workspace: workspace)
+                    .contextMenu { editLinksButton(for: workspace) }
             }
         case .gitRepositories:
             GroupedList(
@@ -128,6 +148,29 @@ struct LauncherView: View {
                 onSelect: { open($0.url) }
             ) { repository in
                 GitRepositoryRow(repository: repository, status: gitStatuses[repository.url])
+            }
+        case .status:
+            GroupedList(
+                items: visibleProjectStatuses.map(\.workspace),
+                groupName: { sectionName(group: $0.group, root: $0.root) },
+                emptyTitle: normalizedQuery.isEmpty ? "No environments yet" : "Nothing found",
+                emptySystemImage: normalizedQuery.isEmpty ? "server.rack" : "magnifyingglass",
+                emptyDescription: normalizedQuery.isEmpty ? Self.statusEmptyDescription : nil
+            ) { workspace in
+                if let status = projectStatuses[workspace.url] {
+                    ProjectStatusRow(
+                        workspace: workspace,
+                        status: status,
+                        pendingAppNames: pendingAppNames,
+                        failedAppNames: failedAppNames,
+                        onStart: startApp,
+                        onStop: stopApp
+                    )
+                        .contextMenu {
+                            Button("Open in VS Code") { open(workspace.url) }
+                            editLinksButton(for: workspace)
+                        }
+                }
             }
         }
     }
@@ -195,6 +238,7 @@ struct LauncherView: View {
         gitRepositories = scanRoots.flatMap { GitRepositoryScanner(root: $0).scan() }
         isSearchFocused = true
         refreshGitStatusesIfVisible()
+        refreshProjectStatusesIfVisible()
     }
 
     private func addScanRoots() {
@@ -232,10 +276,77 @@ struct LauncherView: View {
         }
     }
 
+    private func refreshProjectStatusesIfVisible() {
+        guard selectedTab == .status else { return }
+
+        projectStatusTask?.cancel()
+        projectStatusTask = Task { await loadProjectStatuses() }
+    }
+
+    private func loadProjectStatuses() async {
+        let workspaces = self.workspaces
+        let portless = await Portless.snapshot()
+        await withTaskGroup(of: (URL, ProjectStatus).self) { group in
+            for workspace in workspaces {
+                group.addTask { (workspace.url, await ProjectStatusReader.status(of: workspace, portless: portless)) }
+            }
+            for await (url, status) in group where !Task.isCancelled {
+                projectStatuses[url] = status
+            }
+        }
+    }
+
+    private func startApp(_ app: PortlessApp) {
+        failedAppNames.remove(app.name)
+        guard let process = try? PortlessAppController.start(app) else {
+            failedAppNames.insert(app.name)
+            return
+        }
+        pendingAppNames.insert(app.name)
+        refreshUntil(appNamed: app.name, isRunning: true, startedProcess: process)
+    }
+
+    private func stopApp(_ app: AppStatus) {
+        guard let processID = app.processID else { return }
+        pendingAppNames.insert(app.name)
+        Task {
+            await PortlessAppController.stop(processID: processID)
+            refreshUntil(appNamed: app.name, isRunning: false)
+        }
+    }
+
+    private func refreshUntil(appNamed name: String, isRunning expectedState: Bool, startedProcess: Process? = nil) {
+        Task {
+            var reachedExpectedState = false
+            for _ in 0..<15 {
+                try? await Task.sleep(for: .seconds(2))
+                await loadProjectStatuses()
+                reachedExpectedState = projectStatuses.values.contains { status in
+                    status.apps.contains { $0.name == name && $0.isRunning == expectedState }
+                }
+                let startedProcessExited = startedProcess.map { !$0.isRunning } ?? false
+                if reachedExpectedState || startedProcessExited { break }
+            }
+            if startedProcess != nil && !reachedExpectedState {
+                failedAppNames.insert(name)
+            }
+            pendingAppNames.remove(name)
+        }
+    }
+
+    private func editLinksButton(for workspace: Workspace) -> some View {
+        Button("Edit Environment Links…") {
+            guard let projectDirectory = workspace.directories.first else { return }
+            NSWorkspace.shared.open(ProjectLinksFile.createIfMissing(in: projectDirectory))
+            dismiss()
+        }
+    }
+
     private func openFirstMatch() {
         let firstMatchURL = switch selectedTab {
         case .workspaces: visibleWorkspaces.first?.url
         case .gitRepositories: visibleGitRepositories.first?.url
+        case .status: visibleProjectStatuses.first?.workspace.url
         }
         guard let firstMatchURL else { return }
         open(firstMatchURL)

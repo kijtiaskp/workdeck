@@ -23,14 +23,16 @@ struct WorkspaceScanner {
         let workspaceFiles = entries.filter { $0.pathExtension == Self.workspaceExtension }
 
         for file in workspaceFiles {
+            let referencedFolderPaths = folderPaths(referencedBy: file)
             workspaces.append(Workspace(
                 name: file.deletingPathExtension().lastPathComponent,
                 group: DirectoryScanning.group(for: file, under: root),
                 root: root,
                 url: file,
-                kind: .workspaceFile
+                kind: .workspaceFile,
+                directories: projectDirectories(of: file, referencedFolderPaths: referencedFolderPaths)
             ))
-            coveredPaths.formUnion(folderPaths(referencedBy: file))
+            coveredPaths.formUnion(referencedFolderPaths)
         }
 
         if DirectoryScanning.containsGitRepository(entries) && workspaceFiles.isEmpty {
@@ -40,7 +42,8 @@ struct WorkspaceScanner {
                     group: DirectoryScanning.group(for: directory, under: root),
                     root: root,
                     url: directory,
-                    kind: .folder
+                    kind: .folder,
+                    directories: [directory]
                 ))
             }
             return
@@ -51,6 +54,14 @@ struct WorkspaceScanner {
         for subdirectory in entries where DirectoryScanning.isScannableDirectory(subdirectory) && !coveredPaths.contains(subdirectory.path) {
             scanDirectory(subdirectory, depth: depth + 1, workspaces: &workspaces, coveredPaths: &coveredPaths)
         }
+    }
+
+    private func projectDirectories(of workspaceFile: URL, referencedFolderPaths: [String]) -> [URL] {
+        let baseDirectory = workspaceFile.deletingLastPathComponent().standardizedFileURL
+        let folders = referencedFolderPaths
+            .filter { $0 != baseDirectory.path }
+            .map { URL(fileURLWithPath: $0) }
+        return [baseDirectory] + folders
     }
 
     private func folderPaths(referencedBy workspaceFile: URL) -> [String] {

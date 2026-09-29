@@ -11,6 +11,7 @@ struct Workspace: Identifiable, Hashable {
     let root: URL
     let url: URL
     let kind: Kind
+    let directories: [URL]
 
     var id: URL { url }
 
