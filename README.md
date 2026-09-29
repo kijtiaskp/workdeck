@@ -15,6 +15,10 @@
   <img src="docs/demo.gif" width="480" alt="Workdeck demo: search, switch root folders, view Git status, and open a workspace">
 </p>
 
+<p align="center">
+  <a href="docs/intro.mp4"><img src="docs/intro-poster.jpg" width="640" alt="Watch the 48-second Workdeck intro video"></a>
+</p>
+
 ---
 
 No more `cd some/deep/path && code .`. Workdeck scans your projects folder, finds every `.code-workspace` file and Git repository, and shows them grouped in a searchable menu bar popup.
@@ -24,6 +28,7 @@ No more `cd some/deep/path && code .`. Workdeck scans your projects folder, find
 - **Automatic discovery** of `.code-workspace` files and Git repositories, rescanned every time the popup opens.
 - **No duplicates**: repositories already listed in a `.code-workspace` file's `folders` are hidden, so each project appears once.
 - **Git Repos tab**: every Git repository with its branch, uncommitted file count, and commits ahead of or behind the upstream.
+- **Status tab**: prod and dev URLs of each project, which [portless](https://github.com/vercel-labs/portless) apps are running, and which database environment each running backend is connected to.
 - **Multiple root folders**: scan several project folders, and show all of them or one at a time.
 - **Current project in the menu bar**: optionally show which workspace or folder the focused VS Code window has open.
 - **Search and open**: type to filter, press Return to open the first match, or click any row.
@@ -95,6 +100,43 @@ Text modes read VS Code window titles, so macOS asks you to allow Workdeck in **
 
 The name is taken from the default VS Code window title. If you changed `window.title`, keep `${rootName}` in it.
 
+## Status tab
+
+The **Status** tab lists projects that have environment links or [portless](https://github.com/vercel-labs/portless) apps. Click a URL to open it in the browser, or right-click it to copy.
+
+### Environment links
+
+Right-click a project and choose **Edit Environment Links…** to create and open `.workdeck.json` in the project folder (the folder that contains the `.code-workspace` file, or the repository folder):
+
+```json
+{
+  "environments": {
+    "prod": {
+      "Web": "https://example.com",
+      "API": "https://api.example.com"
+    },
+    "dev": {
+      "Web": "https://dev.example.com",
+      "API": "https://api.dev.example.com"
+    }
+  }
+}
+```
+
+Any environment name works. `prod`, `pre-prod`, `staging`, `uat`, and `dev` are listed first.
+
+### Local apps
+
+Workdeck finds portless apps up to two levels below the project folders, from `portless.json` (`{"name": "..."}`) or from `package.json` scripts that call `portless <name>` or `portless run`. An app is running when portless has a live route for its name. Workdeck reads the portless state in `~/.portless`, or `/tmp/portless` for older proxies, and takes the proxy port, HTTPS setting, and TLD from the files the proxy writes there. Workdeck is tested with portless 0.15; routes it cannot read are skipped.
+
+Press the play button next to a stopped app to start it. Workdeck runs `portless` in the app folder through your login shell, so the `portless.json` name and script apply, or `<package manager> run <script>` when the app was found in a `package.json` script. The package manager comes from the nearest lockfile: bun, pnpm, yarn, or npm. Press the stop button to end the app and its child processes. Output goes to `~/Library/Logs/Workdeck/<name>.log`; press the log button next to the app, or right-click it and choose **Show Log**, to follow it live with `tail -f` in Terminal. If an app exits before its route appears, or does not appear within 30 seconds, it is marked **Failed**; click the mark to open its log. Apps that only show up while running, without a config file, can be stopped but not started.
+
+For a running app, Workdeck finds the process listening on the app port and its child processes, and checks their open connections to common database ports (PostgreSQL, MySQL, SQL Server, MongoDB, Redis, CockroachDB):
+
+- A connection to `localhost` is shown as `LOCAL`.
+- A connection to a server that hosts one of the project's environment links is shown as that environment.
+- Otherwise the remote address is matched against database hosts in the app's `.env` and `.env.*` files. The environment comes from the host name (`prod`, `staging`, `uat`, `dev`), or else from the file name, such as `.env.production`.
+
 ## How projects are discovered
 
 Workdeck walks each root folder up to three levels deep and skips hidden folders, `node_modules`, `dist`, `build`, `vendor`, and `Pods`.
@@ -110,6 +152,10 @@ The **Git Repos** tab uses the same root folders and exclusions, but lists every
 ## Building with Command Line Tools only
 
 The macOS 27 SDK requires the `SwiftUIMacros` compiler plugin, which ships only with Xcode. When Xcode is not installed, `build-app.sh` automatically builds against the macOS 26.5 SDK from the Command Line Tools if it is available. Set `SDKROOT` yourself to override this.
+
+## Intro video
+
+[`docs/intro.mp4`](docs/intro.mp4) and its poster are generated from code: a three.js and GSAP scene in [`video/`](video) is rendered frame by frame in headless Chrome, and the soundtrack is synthesized by [`video/music.py`](video/music.py). Rebuild it with `video/build.sh`, which needs Node.js, Python 3, ffmpeg, and Google Chrome.
 
 ## Changelog
 
