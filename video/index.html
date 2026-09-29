@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Workdeck Intro</title>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "/node_modules/three/build/three.module.js",
+        "three/addons/": "/node_modules/three/examples/jsm/",
+        "gsap": "/node_modules/gsap/index.js"
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --text: #f5f5f7;
+      --muted: #a1a1a6;
+      --accent: #2997ff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background: #05060a;
+      font-family: -apple-system, "SF Pro Display", system-ui, sans-serif;
+      color: var(--text);
+    }
+
+    #stage { position: absolute; inset: 0; }
+
+    .overlay { position: absolute; inset: 0; pointer-events: none; }
+
+    .title {
+      position: absolute;
+      left: 0;
+      right: 0;
+      text-align: center;
+      opacity: 0;
+    }
+
+    .title h1 {
+      font-size: 148px;
+      font-weight: 700;
+      letter-spacing: -5px;
+      background: linear-gradient(180deg, #ffffff 0%, #9ccbff 100%);
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+
+    .title p {
+      margin-top: 12px;
+      font-size: 40px;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: -0.5px;
+    }
+
+    .title .link {
+      margin-top: 36px;
+      font-family: "SF Mono", ui-monospace, Menlo, monospace;
+      font-size: 30px;
+      color: var(--accent);
+    }
+
+    .caption {
+      position: absolute;
+      left: 120px;
+      bottom: 120px;
+      width: 560px;
+      opacity: 0;
+    }
+
+    .caption .kicker {
+      font-family: "SF Mono", ui-monospace, Menlo, monospace;
+      font-size: 22px;
+      color: var(--accent);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .caption h2 {
+      margin-top: 14px;
+      font-size: 64px;
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: -2px;
+    }
+
+    .caption p {
+      margin-top: 18px;
+      font-size: 28px;
+      line-height: 1.4;
+      color: var(--muted);
+    }
+
+    #vignette {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(2, 5, 14, 0.7) 0%, rgba(2, 5, 14, 0.35) 30%, transparent 50%);
+      opacity: 0;
+    }
+
+    #cursor {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      opacity: 0;
+      transform-origin: 6px 4px;
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+    }
+
+    #pulse {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      margin: -10px 0 0 -10px;
+      border-radius: 50%;
+      border: 3px solid #30d158;
+      opacity: 0;
+    }
+
+    #fade {
+      position: absolute;
+      inset: 0;
+      background: #000;
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stage" width="1920" height="1080"></canvas>
+  <div class="overlay">
+    <div id="vignette"></div>
+    <div class="title" id="intro-title" style="top: 760px">
+      <h1>Workdeck</h1>
+      <p>Every VS Code project. One click away.</p>
+    </div>
+
+    <div class="caption" id="caption-discover">
+      <div class="kicker">01 — Discover</div>
+      <h2>Every project,<br>found for you.</h2>
+      <p>Workspaces and Git repositories across your folders, listed once and searchable from the menu bar.</p>
+    </div>
+
+    <div class="caption" id="caption-git">
+      <div class="kicker">02 — Git</div>
+      <h2>Status at<br>a glance.</h2>
+      <p>Branch, commits ahead or behind, and uncommitted changes for every repository.</p>
+    </div>
+
+    <div class="caption" id="caption-status">
+      <div class="kicker">03 — Environments</div>
+      <h2>Stop hunting<br>for URLs.</h2>
+      <p>Prod, dev and local links for each project, one click to open or copy.</p>
+    </div>
+
+    <div class="caption" id="caption-run">
+      <div class="kicker">04 — Run</div>
+      <h2>Start, stop,<br>and tail logs.</h2>
+      <p>Run portless apps without port clashes, see which database they use, and follow their output.</p>
+    </div>
+
+    <div class="title" id="outro-title" style="top: 715px">
+      <h1>Workdeck</h1>
+      <p>Native · Lightweight · Open source</p>
+      <div class="link">github.com/kijtiaskp/workdeck</div>
+    </div>
+
+    <svg id="cursor" viewBox="0 0 32 32">
+      <path d="M6 3 L6 26 L12 20 L16 29 L20 27 L16 18 L24 18 Z" fill="#fff" stroke="#000" stroke-width="1.6" stroke-linejoin="round"/>
+    </svg>
+    <div id="pulse"></div>
+    <div id="fade"></div>
+  </div>
+  <script type="module" src="/scene.js"></script>
+</body>
+</html>

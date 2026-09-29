@@ -1,3 +1,8 @@
 .build/
 dist/
 .DS_Store
+
+video/node_modules/
+video/.venv/
+video/frames/
+video/out/
