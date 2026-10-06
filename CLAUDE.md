@@ -1,11 +1,11 @@
 # Workdeck
 
-Native macOS menu bar app (SwiftUI `MenuBarExtra`, macOS 14+, Swift 5.10 tools, no dependencies). Lists VS Code workspaces and Git repositories, shows Git status, and a Status tab with environment links, portless apps, and the database each running app uses.
+Native macOS menu bar app (SwiftUI `MenuBarExtra`, macOS 14+, Swift 5.10 tools, no dependencies). Lists VS Code workspaces and Git repositories, shows Git status, and per-project environment links, portless apps, and the database each running app uses.
 
 ## Layout
 - `Sources/Workdeck/Models/` — value types (`Workspace`, `GitRepository`, `ProjectStatus`, `EnvironmentLinks`, …).
 - `Sources/Workdeck/Services/` — scanning, Git, portless, process control. No UI code.
-- `Sources/Workdeck/Views/` — SwiftUI views. `LauncherView` owns all popup state and the three tabs.
+- `Sources/Workdeck/Views/` — SwiftUI views. `LauncherView` owns all popup state and the single project list (`Project` merges workspaces with their Git repositories).
 - `Resources/` — `Info.plist` (version lives here), icons.
 - `docs/` — landing page, `demo.gif`, `intro.mp4`, `intro-poster.jpg`.
 - `video/` — code-generated intro video (see below).
@@ -15,7 +15,7 @@ Native macOS menu bar app (SwiftUI `MenuBarExtra`, macOS 14+, Swift 5.10 tools, 
 - Without Xcode, the macOS 27 SDK fails with `SwiftUIMacros plugin not found`; the script falls back to the Command Line Tools macOS 26.5 SDK. For a plain build use `SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk swift build`.
 - No test target. Do not add tests unless asked.
 
-## Status tab data sources
+## Project status data sources
 - Environment links: `.workdeck.json` in the project folder (`ProjectLinksFile`). Schema: `{"environments": {"<env>": {"<label>": "<url>"}}}`.
 - Portless apps: `portless.json` or `package.json` scripts calling `portless` (`PortlessAppScanner`), plus live routes matched to a project by the portless process cwd.
 - Portless state: `~/.portless` or legacy `/tmp/portless` — `routes.json`, `proxy.port`, `proxy.tls`, `proxy.tld` (`Portless`). `routes.json` is internal to portless (tested with 0.15); decode leniently.

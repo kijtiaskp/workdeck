@@ -1,8 +1,7 @@
 import AppKit
 import SwiftUI
 
-struct ProjectStatusRow: View {
-    let workspace: Workspace
+struct ProjectStatusDetails: View {
     let status: ProjectStatus
     let pendingAppNames: Set<String>
     let failedAppNames: Set<String>
@@ -11,20 +10,6 @@ struct ProjectStatusRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
-                Image(systemName: "server.rack")
-                    .foregroundStyle(.secondary)
-                    .frame(width: 18)
-                Text(workspace.name)
-                    .lineLimit(1)
-                Spacer(minLength: 0)
-                if status.runningAppCount > 0 {
-                    Label("\(status.runningAppCount) running", systemImage: "circle.fill")
-                        .font(.caption)
-                        .foregroundStyle(.green)
-                }
-            }
-
             ForEach(status.environments) { environment in
                 EnvironmentSection(name: environment.environment) {
                     ForEach(environment.links) { link in
@@ -63,7 +48,7 @@ struct ProjectStatusRow: View {
                 }
             }
         }
-        .padding(.vertical, 2)
+        .padding(.bottom, 2)
     }
 }
 
@@ -79,7 +64,7 @@ private struct EnvironmentSection<Content: View>: View {
                 content
             }
         }
-        .padding(.leading, 26)
+        .padding(.leading, 44)
     }
 }
 

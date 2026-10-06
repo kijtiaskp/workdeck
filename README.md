@@ -27,8 +27,8 @@ No more `cd some/deep/path && code .`. Workdeck scans your projects folder, find
 
 - **Automatic discovery** of `.code-workspace` files and Git repositories, rescanned every time the popup opens.
 - **No duplicates**: repositories already listed in a `.code-workspace` file's `folders` are hidden, so each project appears once.
-- **Git Repos tab**: every Git repository with its branch, uncommitted file count, and commits ahead of or behind the upstream, plus a button that opens the repository on GitHub or whichever host its `origin` remote points to.
-- **Status tab**: prod and dev URLs of each project, which [portless](https://github.com/vercel-labs/portless) apps are running, and which database environment each running backend is connected to.
+- **One list**: each project row shows its Git branch, uncommitted file count, and commits ahead of or behind the upstream, plus a button that opens the repository on GitHub or whichever host its `origin` remote points to.
+- **Project status**: expand a project to see its prod and dev URLs, which [portless](https://github.com/vercel-labs/portless) apps are running, and which database environment each running backend is connected to.
 - **Multiple root folders**: scan several project folders, and show all of them or one at a time.
 - **Current project in the menu bar**: optionally show which workspace or folder the focused VS Code window has open.
 - **Search and open**: type to filter, press Return to open the first match, or click any row.
@@ -100,13 +100,13 @@ Text modes read VS Code window titles, so macOS asks you to allow Workdeck in **
 
 The name is taken from the default VS Code window title. If you changed `window.title`, keep `${rootName}` in it.
 
-## Status tab
+## Project status
 
-The **Status** tab lists projects that have environment links or [portless](https://github.com/vercel-labs/portless) apps. Click a URL to open it in the browser, or right-click it to copy.
+Projects that have environment links or [portless](https://github.com/vercel-labs/portless) apps show a chevron. Expand it to see them. Click a URL to open it in the browser, or right-click it to copy.
 
 ### PostgreSQL
 
-PostgreSQL versions installed as Homebrew services appear at the top of the tab with their state and port. Press play or stop to run `brew services start` or `brew services stop`. A server started outside `brew services` still shows as running when it listens on its configured port.
+PostgreSQL versions installed as Homebrew services appear at the top of the list with their state and port. Press play or stop to run `brew services start` or `brew services stop`. A server started outside `brew services` still shows as running when it listens on its configured port.
 
 ### Environment links
 
@@ -171,7 +171,7 @@ Workdeck walks each root folder up to three levels deep and skips hidden folders
 
 Items are grouped by their top-level folder under the scan root.
 
-The **Git Repos** tab uses the same root folders and exclusions, but lists every folder that contains `.git`, including repositories inside other repositories or covered by a workspace file. Status is read with `git status --porcelain --branch` in the background when the tab is shown.
+Git status comes from the repository at the workspace folder, or the first repository a workspace file references. Repositories nested inside other repositories are listed as their own rows. Status is read with `git status --porcelain --branch` in the background when the popup opens.
 
 ## Building with Command Line Tools only
 

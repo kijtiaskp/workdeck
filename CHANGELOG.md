@@ -5,6 +5,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Changed
+
+- Workspaces, Git Repos, and Status are merged into one list. Each project row shows its Git branch and status, the repository link, and a running-app count, and expands to show its environments and portless apps.
+
 ### Added
 
 - Status tab shows a TAILNET row for `tailscale serve` shares: the `ts.net` URL, the app behind it, and whether it is running.

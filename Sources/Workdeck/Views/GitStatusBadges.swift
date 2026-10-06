@@ -1,39 +1,6 @@
 import SwiftUI
 
-struct GitRepositoryRow: View {
-    let repository: GitRepository
-    let status: GitStatus?
-    let remoteURL: URL?
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "arrow.triangle.branch")
-                .foregroundStyle(.secondary)
-                .frame(width: 18)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(repository.name)
-                    .lineLimit(1)
-                Text(status?.branch ?? " ")
-                    .font(.caption.monospaced())
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            Spacer(minLength: 0)
-            if let status {
-                StatusBadges(status: status)
-            } else {
-                ProgressView()
-                    .controlSize(.mini)
-            }
-            if let remoteURL {
-                RemoteLinkButton(url: remoteURL)
-            }
-        }
-        .contentShape(Rectangle())
-    }
-}
-
-private struct StatusBadges: View {
+struct GitStatusBadges: View {
     let status: GitStatus
 
     var body: some View {

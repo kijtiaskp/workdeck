@@ -1,29 +1,16 @@
 import SwiftUI
 
 struct LauncherView: View {
-    enum Tab: String, CaseIterable, Identifiable {
-        case workspaces = "Workspaces"
-        case gitRepositories = "Git Repos"
-        case status = "Status"
-
-        var id: Self { self }
-    }
-
     private static let allRootsSelection = ""
-    private static let statusEmptyDescription = """
-        Right-click a project in Workspaces and choose Edit Environment Links… to add prod and dev URLs, \
-        or add a portless.json to an app folder to run it from here.
-        """
 
     @Environment(\.dismiss) private var dismiss
     @AppStorage("SelectedScanRoot") private var selectedRootPath = allRootsSelection
     @AppStorage(MenuBarLabelStyle.defaultsKey) private var labelStyle: MenuBarLabelStyle = .icon
     @AppStorage(MenuBarNameLength.defaultsKey) private var nameLength: MenuBarNameLength = .full
-    @State private var selectedTab: Tab = .workspaces
     @State private var query = ""
     @State private var scanRoots: [URL] = []
-    @State private var workspaces: [Workspace] = []
-    @State private var gitRepositories: [GitRepository] = []
+    @State private var projects: [Project] = []
+    @State private var expandedProjectIDs: Set<URL> = []
     @State private var gitStatuses: [URL: GitStatus] = [:]
     @State private var gitRemoteURLs: [URL: URL] = [:]
     @State private var gitStatusTask: Task<Void, Never>?
@@ -49,19 +36,8 @@ struct LauncherView: View {
         query.trimmingCharacters(in: .whitespaces).lowercased()
     }
 
-    private var visibleWorkspaces: [Workspace] {
-        workspaces.filter { isVisible(root: $0.root, searchText: $0.searchText) }
-    }
-
-    private var visibleGitRepositories: [GitRepository] {
-        gitRepositories.filter { isVisible(root: $0.root, searchText: $0.searchText) }
-    }
-
-    private var visibleProjectStatuses: [(workspace: Workspace, status: ProjectStatus)] {
-        visibleWorkspaces.compactMap { workspace in
-            guard let status = projectStatuses[workspace.url], !status.isEmpty else { return nil }
-            return (workspace, status)
-        }
+    private var visibleProjects: [Project] {
+        projects.filter { isVisible(root: $0.root, searchText: $0.searchText) }
     }
 
     var body: some View {
@@ -75,10 +51,6 @@ struct LauncherView: View {
         .frame(width: 340, height: 480)
         .onAppear(perform: reload)
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in reload() }
-        .onChange(of: selectedTab) {
-            refreshGitStatusesIfVisible()
-            refreshProjectStatusesIfVisible()
-        }
         .onChange(of: labelStyle) {
             if labelStyle.showsText && !AccessibilityPermission.isGranted {
                 AccessibilityPermission.request()
@@ -87,22 +59,12 @@ struct LauncherView: View {
     }
 
     private var header: some View {
-        VStack(spacing: 8) {
-            Picker("View", selection: $selectedTab) {
-                ForEach(Tab.allCases) { tab in
-                    Text(tab.rawValue).tag(tab)
-                }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-
-            HStack(spacing: 6) {
-                rootMenu
-                TextField("Search", text: $query)
-                    .textFieldStyle(.roundedBorder)
-                    .focused($isSearchFocused)
-                    .onSubmit(openFirstMatch)
-            }
+        HStack(spacing: 6) {
+            rootMenu
+            TextField("Search", text: $query)
+                .textFieldStyle(.roundedBorder)
+                .focused($isSearchFocused)
+                .onSubmit(openFirstMatch)
         }
         .padding(10)
     }
@@ -132,65 +94,69 @@ struct LauncherView: View {
         .fixedSize()
     }
 
-    @ViewBuilder
     private var content: some View {
-        switch selectedTab {
-        case .workspaces:
-            GroupedList(
-                items: visibleWorkspaces,
-                groupName: { sectionName(group: $0.group, root: $0.root) },
-                onSelect: { open($0.url) }
-            ) { workspace in
-                WorkspaceRow(workspace: workspace)
-                    .contextMenu { editLinksButton(for: workspace) }
+        VStack(spacing: 0) {
+            if !databaseServices.isEmpty {
+                DatabaseServicesView(
+                    services: databaseServices,
+                    pendingFormulas: pendingDatabaseFormulas,
+                    onStart: startDatabase,
+                    onStop: stopDatabase
+                )
+                Divider()
             }
-        case .gitRepositories:
-            GroupedList(
-                items: visibleGitRepositories,
-                groupName: { sectionName(group: $0.group, root: $0.root) },
-                onSelect: { open($0.url) }
-            ) { repository in
-                GitRepositoryRow(repository: repository, status: gitStatuses[repository.url], remoteURL: gitRemoteURLs[repository.url])
-            }
-        case .status:
-            VStack(spacing: 0) {
-                if !databaseServices.isEmpty {
-                    DatabaseServicesView(
-                        services: databaseServices,
-                        pendingFormulas: pendingDatabaseFormulas,
-                        onStart: startDatabase,
-                        onStop: stopDatabase
-                    )
-                    Divider()
-                }
-                statusList
-            }
+            projectList
         }
     }
 
-    private var statusList: some View {
+    private var projectList: some View {
         GroupedList(
-            items: visibleProjectStatuses.map(\.workspace),
+            items: visibleProjects,
             groupName: { sectionName(group: $0.group, root: $0.root) },
-            emptyTitle: normalizedQuery.isEmpty ? "No environments yet" : "Nothing found",
-            emptySystemImage: normalizedQuery.isEmpty ? "server.rack" : "magnifyingglass",
-            emptyDescription: normalizedQuery.isEmpty ? Self.statusEmptyDescription : nil
-        ) { workspace in
-            if let status = projectStatuses[workspace.url] {
-                ProjectStatusRow(
-                    workspace: workspace,
+            onSelect: { open($0.url) },
+            emptyTitle: normalizedQuery.isEmpty ? "No projects yet" : "Nothing found",
+            emptySystemImage: normalizedQuery.isEmpty ? "folder.badge.plus" : "magnifyingglass",
+            emptyDescription: normalizedQuery.isEmpty ? "Choose Add Folder… from the folder menu." : nil
+        ) { project in
+            projectRow(for: project)
+        }
+    }
+
+    private func projectRow(for project: Project) -> some View {
+        let status = projectStatuses[project.url]
+        let repositoryURL = project.repository?.url
+        return ProjectRow(
+            project: project,
+            gitStatus: repositoryURL.flatMap { gitStatuses[$0] },
+            remoteURL: repositoryURL.flatMap { gitRemoteURLs[$0] },
+            runningAppCount: status?.runningAppCount ?? 0,
+            hasDetails: !(status?.isEmpty ?? true),
+            isExpanded: expansionBinding(for: project)
+        ) {
+            if let status {
+                ProjectStatusDetails(
                     status: status,
                     pendingAppNames: pendingAppNames,
                     failedAppNames: failedAppNames,
                     onStart: startApp,
                     onStop: stopApp
                 )
-                    .contextMenu {
-                        Button("Open in VS Code") { open(workspace.url) }
-                        editLinksButton(for: workspace)
-                    }
             }
         }
+        .contextMenu { editLinksButton(for: project.workspace) }
+    }
+
+    private func expansionBinding(for project: Project) -> Binding<Bool> {
+        Binding(
+            get: { expandedProjectIDs.contains(project.id) },
+            set: { isExpanded in
+                if isExpanded {
+                    expandedProjectIDs.insert(project.id)
+                } else {
+                    expandedProjectIDs.remove(project.id)
+                }
+            }
+        )
     }
 
     private var footer: some View {
@@ -252,11 +218,13 @@ struct LauncherView: View {
         if !scanRoots.contains(where: { $0.path == selectedRootPath }) {
             selectedRootPath = Self.allRootsSelection
         }
-        workspaces = scanRoots.flatMap { WorkspaceScanner(root: $0).scan() }
-        gitRepositories = scanRoots.flatMap { GitRepositoryScanner(root: $0).scan() }
+        projects = Project.merge(
+            workspaces: scanRoots.flatMap { WorkspaceScanner(root: $0).scan() },
+            repositories: scanRoots.flatMap { GitRepositoryScanner(root: $0).scan() }
+        )
         isSearchFocused = true
-        refreshGitStatusesIfVisible()
-        refreshProjectStatusesIfVisible()
+        refreshGitStatuses()
+        refreshProjectStatuses()
     }
 
     private func addScanRoots() {
@@ -277,11 +245,9 @@ struct LauncherView: View {
         reload()
     }
 
-    private func refreshGitStatusesIfVisible() {
-        guard selectedTab == .gitRepositories else { return }
-
+    private func refreshGitStatuses() {
         gitStatusTask?.cancel()
-        let repositoryURLs = gitRepositories.map(\.url)
+        let repositoryURLs = projects.compactMap(\.repository?.url)
         gitStatusTask = Task {
             await withTaskGroup(of: (URL, GitStatus?, URL?).self) { group in
                 for url in repositoryURLs {
@@ -299,15 +265,13 @@ struct LauncherView: View {
         }
     }
 
-    private func refreshProjectStatusesIfVisible() {
-        guard selectedTab == .status else { return }
-
+    private func refreshProjectStatuses() {
         projectStatusTask?.cancel()
         projectStatusTask = Task { await loadProjectStatuses() }
     }
 
     private func loadProjectStatuses() async {
-        let workspaces = self.workspaces
+        let workspaces = projects.map(\.workspace)
         async let portlessSnapshot = Portless.snapshot()
         async let tailscaleEntries = TailscaleServe.entries()
         async let postgresServices = HomebrewServices.postgresServices()
@@ -402,12 +366,7 @@ struct LauncherView: View {
     }
 
     private func openFirstMatch() {
-        let firstMatchURL = switch selectedTab {
-        case .workspaces: visibleWorkspaces.first?.url
-        case .gitRepositories: visibleGitRepositories.first?.url
-        case .status: visibleProjectStatuses.first?.workspace.url
-        }
-        guard let firstMatchURL else { return }
+        guard let firstMatchURL = visibleProjects.first?.url else { return }
         open(firstMatchURL)
     }
 
