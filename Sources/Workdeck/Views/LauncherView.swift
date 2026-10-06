@@ -25,11 +25,14 @@ struct LauncherView: View {
     @State private var workspaces: [Workspace] = []
     @State private var gitRepositories: [GitRepository] = []
     @State private var gitStatuses: [URL: GitStatus] = [:]
+    @State private var gitRemoteURLs: [URL: URL] = [:]
     @State private var gitStatusTask: Task<Void, Never>?
     @State private var projectStatuses: [URL: ProjectStatus] = [:]
     @State private var projectStatusTask: Task<Void, Never>?
     @State private var pendingAppNames: Set<String> = []
     @State private var failedAppNames: Set<String> = []
+    @State private var databaseServices: [DatabaseService] = []
+    @State private var pendingDatabaseFormulas: Set<String> = []
     @FocusState private var isSearchFocused: Bool
 
     private var appVersion: String {
@@ -147,30 +150,45 @@ struct LauncherView: View {
                 groupName: { sectionName(group: $0.group, root: $0.root) },
                 onSelect: { open($0.url) }
             ) { repository in
-                GitRepositoryRow(repository: repository, status: gitStatuses[repository.url])
+                GitRepositoryRow(repository: repository, status: gitStatuses[repository.url], remoteURL: gitRemoteURLs[repository.url])
             }
         case .status:
-            GroupedList(
-                items: visibleProjectStatuses.map(\.workspace),
-                groupName: { sectionName(group: $0.group, root: $0.root) },
-                emptyTitle: normalizedQuery.isEmpty ? "No environments yet" : "Nothing found",
-                emptySystemImage: normalizedQuery.isEmpty ? "server.rack" : "magnifyingglass",
-                emptyDescription: normalizedQuery.isEmpty ? Self.statusEmptyDescription : nil
-            ) { workspace in
-                if let status = projectStatuses[workspace.url] {
-                    ProjectStatusRow(
-                        workspace: workspace,
-                        status: status,
-                        pendingAppNames: pendingAppNames,
-                        failedAppNames: failedAppNames,
-                        onStart: startApp,
-                        onStop: stopApp
+            VStack(spacing: 0) {
+                if !databaseServices.isEmpty {
+                    DatabaseServicesView(
+                        services: databaseServices,
+                        pendingFormulas: pendingDatabaseFormulas,
+                        onStart: startDatabase,
+                        onStop: stopDatabase
                     )
-                        .contextMenu {
-                            Button("Open in VS Code") { open(workspace.url) }
-                            editLinksButton(for: workspace)
-                        }
+                    Divider()
                 }
+                statusList
+            }
+        }
+    }
+
+    private var statusList: some View {
+        GroupedList(
+            items: visibleProjectStatuses.map(\.workspace),
+            groupName: { sectionName(group: $0.group, root: $0.root) },
+            emptyTitle: normalizedQuery.isEmpty ? "No environments yet" : "Nothing found",
+            emptySystemImage: normalizedQuery.isEmpty ? "server.rack" : "magnifyingglass",
+            emptyDescription: normalizedQuery.isEmpty ? Self.statusEmptyDescription : nil
+        ) { workspace in
+            if let status = projectStatuses[workspace.url] {
+                ProjectStatusRow(
+                    workspace: workspace,
+                    status: status,
+                    pendingAppNames: pendingAppNames,
+                    failedAppNames: failedAppNames,
+                    onStart: startApp,
+                    onStop: stopApp
+                )
+                    .contextMenu {
+                        Button("Open in VS Code") { open(workspace.url) }
+                        editLinksButton(for: workspace)
+                    }
             }
         }
     }
@@ -265,12 +283,17 @@ struct LauncherView: View {
         gitStatusTask?.cancel()
         let repositoryURLs = gitRepositories.map(\.url)
         gitStatusTask = Task {
-            await withTaskGroup(of: (URL, GitStatus?).self) { group in
+            await withTaskGroup(of: (URL, GitStatus?, URL?).self) { group in
                 for url in repositoryURLs {
-                    group.addTask { (url, await GitStatusReader.status(of: url)) }
+                    group.addTask {
+                        async let status = GitStatusReader.status(of: url)
+                        async let remoteURL = GitStatusReader.remoteWebURL(of: url)
+                        return (url, await status, await remoteURL)
+                    }
                 }
-                for await (url, status) in group where !Task.isCancelled {
+                for await (url, status, remoteURL) in group where !Task.isCancelled {
                     gitStatuses[url] = status
+                    gitRemoteURLs[url] = remoteURL
                 }
             }
         }
@@ -285,10 +308,17 @@ struct LauncherView: View {
 
     private func loadProjectStatuses() async {
         let workspaces = self.workspaces
-        let portless = await Portless.snapshot()
+        async let portlessSnapshot = Portless.snapshot()
+        async let tailscaleEntries = TailscaleServe.entries()
+        async let postgresServices = HomebrewServices.postgresServices()
+        let portless = await portlessSnapshot
+        let tailscaleServe = await tailscaleEntries
+        databaseServices = await postgresServices
         await withTaskGroup(of: (URL, ProjectStatus).self) { group in
             for workspace in workspaces {
-                group.addTask { (workspace.url, await ProjectStatusReader.status(of: workspace, portless: portless)) }
+                group.addTask {
+                    (workspace.url, await ProjectStatusReader.status(of: workspace, portless: portless, tailscaleServe: tailscaleServe))
+                }
             }
             for await (url, status) in group where !Task.isCancelled {
                 projectStatuses[url] = status
@@ -296,14 +326,20 @@ struct LauncherView: View {
         }
     }
 
-    private func startApp(_ app: PortlessApp) {
+    private func startApp(_ app: LocalApp) {
         failedAppNames.remove(app.name)
-        guard let process = try? PortlessAppController.start(app) else {
-            failedAppNames.insert(app.name)
-            return
-        }
         pendingAppNames.insert(app.name)
-        refreshUntil(appNamed: app.name, isRunning: true, startedProcess: process)
+        Task {
+            if case .packageScriptOnPort(_, let port) = app.launchCommand {
+                await PortlessAppController.freePort(port)
+            }
+            guard let process = try? PortlessAppController.start(app) else {
+                failedAppNames.insert(app.name)
+                pendingAppNames.remove(app.name)
+                return
+            }
+            refreshUntil(appNamed: app.name, isRunning: true, startedProcess: process)
+        }
     }
 
     private func stopApp(_ app: AppStatus) {
@@ -312,6 +348,29 @@ struct LauncherView: View {
         Task {
             await PortlessAppController.stop(processID: processID)
             refreshUntil(appNamed: app.name, isRunning: false)
+        }
+    }
+
+    private func startDatabase(_ service: DatabaseService) {
+        changeDatabase(service, expectedState: .running) { await HomebrewServices.start(service) }
+    }
+
+    private func stopDatabase(_ service: DatabaseService) {
+        changeDatabase(service, expectedState: .stopped) { await HomebrewServices.stop(service) }
+    }
+
+    private func changeDatabase(_ service: DatabaseService, expectedState: DatabaseService.State, action: @escaping () async -> Bool) {
+        pendingDatabaseFormulas.insert(service.formula)
+        Task {
+            _ = await action()
+            for _ in 0..<10 {
+                databaseServices = await HomebrewServices.postgresServices()
+                let current = databaseServices.first { $0.formula == service.formula }?.state
+                if current == expectedState || current == .failed { break }
+                try? await Task.sleep(for: .seconds(1))
+            }
+            pendingDatabaseFormulas.remove(service.formula)
+            await loadProjectStatuses()
         }
     }
 

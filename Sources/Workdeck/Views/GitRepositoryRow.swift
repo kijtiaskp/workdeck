@@ -3,6 +3,7 @@ import SwiftUI
 struct GitRepositoryRow: View {
     let repository: GitRepository
     let status: GitStatus?
+    let remoteURL: URL?
 
     var body: some View {
         HStack(spacing: 8) {
@@ -23,6 +24,9 @@ struct GitRepositoryRow: View {
             } else {
                 ProgressView()
                     .controlSize(.mini)
+            }
+            if let remoteURL {
+                RemoteLinkButton(url: remoteURL)
             }
         }
         .contentShape(Rectangle())
@@ -50,5 +54,20 @@ private struct StatusBadges: View {
         }
         .font(.caption)
         .labelStyle(.titleAndIcon)
+    }
+}
+
+struct RemoteLinkButton: View {
+    let url: URL
+
+    var body: some View {
+        Button {
+            NSWorkspace.shared.open(url)
+        } label: {
+            Image(systemName: "arrow.up.right.square")
+                .foregroundStyle(.secondary)
+        }
+        .buttonStyle(.borderless)
+        .help("Open \(url.host() ?? "remote") repository")
     }
 }

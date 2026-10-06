@@ -19,6 +19,8 @@ Native macOS menu bar app (SwiftUI `MenuBarExtra`, macOS 14+, Swift 5.10 tools, 
 - Environment links: `.workdeck.json` in the project folder (`ProjectLinksFile`). Schema: `{"environments": {"<env>": {"<label>": "<url>"}}}`.
 - Portless apps: `portless.json` or `package.json` scripts calling `portless` (`PortlessAppScanner`), plus live routes matched to a project by the portless process cwd.
 - Portless state: `~/.portless` or legacy `/tmp/portless` — `routes.json`, `proxy.port`, `proxy.tls`, `proxy.tld` (`Portless`). `routes.json` is internal to portless (tested with 0.15); decode leniently.
+- Tailnet: `tailscale serve status --json` (`TailscaleServe`). A `tailnet` section in `.workdeck.json` (`port` + `apps` with `folder`/`path`/`script`) lists apps that share one forwarded port; Run frees the port first. Workdeck never edits `tailscale serve`.
+- PostgreSQL: `brew services list --json` filtered to `postgresql*`, port from `<prefix>/var/<formula>/postgresql.conf` (`HomebrewServices`); start/stop via `brew services`.
 - Database: `lsof` on the process listening on the route port and its descendants, matched against environment link hosts, then `.env*` database hosts (`DatabaseConnectionDetector`). Heuristic by design.
 - Run/Stop: `$SHELL -lc "exec portless"` or `<package manager> run <script>` in the app folder; logs in `~/Library/Logs/Workdeck/<name>.log`, shown with `tail -f` via a `.command` file in Terminal (`PortlessAppController`).
 

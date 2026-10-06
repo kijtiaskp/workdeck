@@ -6,7 +6,7 @@ struct ProjectStatusRow: View {
     let status: ProjectStatus
     let pendingAppNames: Set<String>
     let failedAppNames: Set<String>
-    let onStart: (PortlessApp) -> Void
+    let onStart: (LocalApp) -> Void
     let onStop: (AppStatus) -> Void
 
     var body: some View {
@@ -29,6 +29,22 @@ struct ProjectStatusRow: View {
                 EnvironmentSection(name: environment.environment) {
                     ForEach(environment.links) { link in
                         LinkButton(label: link.label, url: link.url)
+                    }
+                }
+            }
+
+            if !status.tailnetShares.isEmpty {
+                EnvironmentSection(name: "tailnet") {
+                    ForEach(status.tailnetShares) { share in
+                        TailnetShareView(share: share)
+                    }
+                }
+            }
+
+            if !status.repositories.isEmpty {
+                EnvironmentSection(name: "repo") {
+                    ForEach(status.repositories) { repository in
+                        LinkButton(label: repository.label, url: repository.url)
                     }
                 }
             }
@@ -76,6 +92,7 @@ private struct EnvironmentBadge: View {
         case "pre-prod", "staging", "uat": .orange
         case "dev", "development": .blue
         case "local": .green
+        case "tailnet": .purple
         default: .secondary
         }
     }
@@ -92,7 +109,7 @@ private struct AppStatusView: View {
     let app: AppStatus
     let isPending: Bool
     let hasFailed: Bool
-    let onStart: (PortlessApp) -> Void
+    let onStart: (LocalApp) -> Void
     let onStop: (AppStatus) -> Void
 
     var body: some View {
@@ -167,6 +184,28 @@ private struct AppStatusView: View {
             .help("Run \(app.name) with portless")
         } else {
             Color.clear.frame(width: 16, height: 1)
+        }
+    }
+}
+
+private struct TailnetShareView: View {
+    let share: TailnetShare
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(share.isRunning ? Color.green : Color.secondary.opacity(0.4))
+                    .frame(width: 6, height: 6)
+                LinkButton(label: share.appName, url: share.url)
+                    .opacity(share.isRunning ? 1 : 0.5)
+            }
+            if !share.isRunning {
+                Text("not running")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, 10)
+            }
         }
     }
 }

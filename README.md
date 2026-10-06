@@ -27,7 +27,7 @@ No more `cd some/deep/path && code .`. Workdeck scans your projects folder, find
 
 - **Automatic discovery** of `.code-workspace` files and Git repositories, rescanned every time the popup opens.
 - **No duplicates**: repositories already listed in a `.code-workspace` file's `folders` are hidden, so each project appears once.
-- **Git Repos tab**: every Git repository with its branch, uncommitted file count, and commits ahead of or behind the upstream.
+- **Git Repos tab**: every Git repository with its branch, uncommitted file count, and commits ahead of or behind the upstream, plus a button that opens the repository on GitHub or whichever host its `origin` remote points to.
 - **Status tab**: prod and dev URLs of each project, which [portless](https://github.com/vercel-labs/portless) apps are running, and which database environment each running backend is connected to.
 - **Multiple root folders**: scan several project folders, and show all of them or one at a time.
 - **Current project in the menu bar**: optionally show which workspace or folder the focused VS Code window has open.
@@ -104,6 +104,10 @@ The name is taken from the default VS Code window title. If you changed `window.
 
 The **Status** tab lists projects that have environment links or [portless](https://github.com/vercel-labs/portless) apps. Click a URL to open it in the browser, or right-click it to copy.
 
+### PostgreSQL
+
+PostgreSQL versions installed as Homebrew services appear at the top of the tab with their state and port. Press play or stop to run `brew services start` or `brew services stop`. A server started outside `brew services` still shows as running when it listens on its configured port.
+
 ### Environment links
 
 Right-click a project and choose **Edit Environment Links…** to create and open `.workdeck.json` in the project folder (the folder that contains the `.code-workspace` file, or the repository folder):
@@ -124,6 +128,26 @@ Right-click a project and choose **Edit Environment Links…** to create and ope
 ```
 
 Any environment name works. `prod`, `pre-prod`, `staging`, `uat`, and `dev` are listed first.
+
+### Tailnet
+
+If `tailscale serve` shares a local port, the project shows a **TAILNET** row with the public `ts.net` URL, the app behind it, and whether it is running.
+
+When several apps must be reached through the same `ts.net` URL, for example LIFF apps registered to one domain, list them in `.workdeck.json` with the port that `tailscale serve` forwards:
+
+```json
+{
+  "tailnet": {
+    "port": 5480,
+    "apps": {
+      "register": { "folder": "register", "path": "/?liff_id=1234567890-abcdefgh" },
+      "feedback": { "folder": "feedback", "script": "dev" }
+    }
+  }
+}
+```
+
+Every app appears under **LOCAL**. Pressing play stops whatever listens on the port, then runs `<package manager> run <script> --port <port> --strictPort` in the app folder (`script` defaults to `dev`). `path` is appended to the `ts.net` URL, so the link can carry the query string the app needs. Workdeck never changes `tailscale serve` itself.
 
 ### Local apps
 

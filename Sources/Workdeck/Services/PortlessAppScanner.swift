@@ -1,9 +1,10 @@
 import Foundation
 
-struct PortlessApp: Hashable {
+struct LocalApp: Hashable {
     enum LaunchCommand: Hashable {
         case portless
         case packageScript(String)
+        case packageScriptOnPort(String, port: Int)
     }
 
     let name: String
@@ -16,8 +17,8 @@ enum PortlessAppScanner {
         "run", "get", "list", "proxy", "alias", "service", "trust", "clean", "hosts", "share", "help", "version",
     ]
 
-    static func apps(in directories: [URL], maxDepth: Int = 2) -> [PortlessApp] {
-        var apps: [PortlessApp] = []
+    static func apps(in directories: [URL], maxDepth: Int = 2) -> [LocalApp] {
+        var apps: [LocalApp] = []
         var visitedPaths: Set<String> = []
         for directory in directories {
             scan(directory, depth: 0, maxDepth: maxDepth, apps: &apps, visitedPaths: &visitedPaths)
@@ -25,7 +26,7 @@ enum PortlessAppScanner {
         return apps
     }
 
-    private static func scan(_ directory: URL, depth: Int, maxDepth: Int, apps: inout [PortlessApp], visitedPaths: inout Set<String>) {
+    private static func scan(_ directory: URL, depth: Int, maxDepth: Int, apps: inout [LocalApp], visitedPaths: inout Set<String>) {
         guard visitedPaths.insert(directory.path).inserted else { return }
 
         if let app = app(in: directory) {
@@ -38,12 +39,12 @@ enum PortlessAppScanner {
         }
     }
 
-    private static func app(in directory: URL) -> PortlessApp? {
+    private static func app(in directory: URL) -> LocalApp? {
         if let name = nameFromConfigFile(in: directory) {
-            return PortlessApp(name: name, directory: directory, launchCommand: .portless)
+            return LocalApp(name: name, directory: directory, launchCommand: .portless)
         }
         if let (name, scriptName) = nameFromPackageScripts(in: directory) {
-            return PortlessApp(name: name, directory: directory, launchCommand: .packageScript(scriptName))
+            return LocalApp(name: name, directory: directory, launchCommand: .packageScript(scriptName))
         }
         return nil
     }

@@ -46,6 +46,28 @@ enum ProjectLinksFile {
             .sorted { sortKey(of: $0.environment) < sortKey(of: $1.environment) }
     }
 
+    struct TailnetConfig: Decodable {
+        struct App: Decodable {
+            let folder: String
+            let path: String?
+            let script: String?
+        }
+
+        let port: Int
+        let apps: [String: App]
+    }
+
+    static func tailnetConfig(from directory: URL) -> TailnetConfig? {
+        struct Definition: Decodable {
+            let tailnet: TailnetConfig?
+        }
+
+        guard let data = try? Data(contentsOf: url(in: directory)) else { return nil }
+        let decoder = JSONDecoder()
+        decoder.allowsJSON5 = true
+        return (try? decoder.decode(Definition.self, from: data))?.tailnet
+    }
+
     static func createIfMissing(in directory: URL) -> URL {
         let fileURL = url(in: directory)
         if !FileManager.default.fileExists(atPath: fileURL.path) {

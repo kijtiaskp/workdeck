@@ -25,19 +25,13 @@ enum DatabaseConnectionDetector {
         projectDirectory: URL,
         environmentLinks: [EnvironmentLinks]
     ) async -> DatabaseConnection? {
-        let serverProcessIDs = await listeningProcessIDs(on: port)
+        let serverProcessIDs = await ProcessTree.listeningProcessIDs(on: port)
         guard !serverProcessIDs.isEmpty else { return nil }
 
         let processIDs = await ProcessTree.withDescendants(serverProcessIDs)
         guard let endpoint = await databaseEndpoints(of: processIDs).first else { return nil }
 
         return classify(endpoint, environmentLinks: environmentLinks, configuredHosts: configuredHosts(in: projectDirectory))
-    }
-
-    private static func listeningProcessIDs(on port: Int) async -> [Int32] {
-        let arguments = ["-nP", "-iTCP:\(port)", "-sTCP:LISTEN", "-t"]
-        guard let output = await ProcessRunner.output(of: lsofExecutableURL, arguments: arguments) else { return [] }
-        return output.split(whereSeparator: \.isNewline).compactMap { Int32($0) }
     }
 
     private static func databaseEndpoints(of processIDs: [Int32]) async -> [Endpoint] {

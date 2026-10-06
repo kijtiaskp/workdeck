@@ -3,6 +3,15 @@
 All notable changes to Workdeck are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- Status tab shows a TAILNET row for `tailscale serve` shares: the `ts.net` URL, the app behind it, and whether it is running.
+- Links to each repository's page on GitHub (or any Git host) from its `origin` remote, in the Git Repos tab and as a REPO row in the Status tab.
+- PostgreSQL Homebrew services at the top of the Status tab, with their state, port, and start and stop buttons.
+- A `tailnet` section in `.workdeck.json` lists apps that share one forwarded port. Each appears under LOCAL, and starting one stops the app that holds the port.
+
 ## [1.3.0] - 2026-09-29
 
 ### Added

@@ -55,7 +55,6 @@ struct PortlessSnapshot {
 }
 
 enum Portless {
-    private static let lsofExecutableURL = URL(fileURLWithPath: "/usr/sbin/lsof")
     private static let userStateDirectory = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(".portless")
     private static let legacyStateDirectory = URL(fileURLWithPath: "/tmp/portless")
     private static let defaultTopLevelDomain = "localhost"
@@ -66,7 +65,7 @@ enum Portless {
 
         var runningRoutes: [RunningPortlessRoute] = []
         for route in routes(in: stateDirectory) where route.pid == 0 || isProcessAlive(route.pid) {
-            let workingDirectory = route.pid == 0 ? nil : await workingDirectory(ofProcess: route.pid)
+            let workingDirectory = route.pid == 0 ? nil : await ProcessTree.workingDirectory(ofProcess: route.pid)
             runningRoutes.append(RunningPortlessRoute(route: route, workingDirectory: workingDirectory))
         }
         return PortlessSnapshot(settings: settings, routes: runningRoutes)
@@ -126,14 +125,6 @@ enum Portless {
 
     private static func fileExists(_ fileName: String, in directory: URL) -> Bool {
         FileManager.default.fileExists(atPath: directory.appendingPathComponent(fileName).path)
-    }
-
-    private static func workingDirectory(ofProcess pid: Int32) async -> URL? {
-        let arguments = ["-a", "-p", String(pid), "-d", "cwd", "-Fn"]
-        guard let output = await ProcessRunner.output(of: lsofExecutableURL, arguments: arguments),
-              let pathLine = output.split(whereSeparator: \.isNewline).first(where: { $0.hasPrefix("n") })
-        else { return nil }
-        return URL(fileURLWithPath: String(pathLine.dropFirst())).standardizedFileURL
     }
 
     private static func isProcessAlive(_ pid: Int32) -> Bool {

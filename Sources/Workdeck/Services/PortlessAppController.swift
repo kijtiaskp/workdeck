@@ -9,7 +9,7 @@ enum PortlessAppController {
     ]
     private static let lockfileSearchDepth = 4
 
-    static func start(_ app: PortlessApp) throws -> Process {
+    static func start(_ app: LocalApp) throws -> Process {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh")
         process.arguments = ["-lc", shellCommand(for: app)]
@@ -51,10 +51,27 @@ enum PortlessAppController {
         return scriptURL
     }
 
-    private static func shellCommand(for app: PortlessApp) -> String {
+    private static func shellCommand(for app: LocalApp) -> String {
         switch app.launchCommand {
         case .portless: "exec portless"
-        case .packageScript(let scriptName): "exec \(packageManager(for: app.directory)) run \(shellQuoted(scriptName))"
+        case .packageScript(let scriptName):
+            "exec \(packageManager(for: app.directory)) run \(shellQuoted(scriptName))"
+        case .packageScriptOnPort(let scriptName, let port):
+            scriptCommand(scriptName, packageManager: packageManager(for: app.directory), extraArguments: "--port \(port) --strictPort")
+        }
+    }
+
+    private static func scriptCommand(_ scriptName: String, packageManager: String, extraArguments: String) -> String {
+        let separator = packageManager == "npm" ? " --" : ""
+        return "exec \(packageManager) run \(shellQuoted(scriptName))\(separator) \(extraArguments)"
+    }
+
+    static func freePort(_ port: Int) async {
+        for processID in await ProcessTree.listeningProcessIDs(on: port) {
+            await stop(processID: processID)
+        }
+        for _ in 0..<20 where !(await ProcessTree.listeningProcessIDs(on: port)).isEmpty {
+            try? await Task.sleep(for: .milliseconds(250))
         }
     }
 
