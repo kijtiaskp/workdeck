@@ -8,6 +8,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 ### Changed
 
 - Workspaces, Git Repos, and Status are merged into one list. Each project row shows its Git branch and status, the repository link, and a running-app count, and expands to show its environments and portless apps.
+- Projects are ordered by root folder, then by how often you open them from Workdeck. Choose Move Folder to Top from the folder menu to put a root folder first.
 
 ### Added
 

@@ -10,9 +10,16 @@ struct GroupedList<Item: Identifiable, Row: View>: View {
     @ViewBuilder let row: (Item) -> Row
 
     private var sections: [(name: String, items: [Item])] {
-        Dictionary(grouping: items, by: groupName)
-            .map { (name: $0.key, items: $0.value) }
-            .sorted { $0.name.lowercased() < $1.name.lowercased() }
+        var sections: [(name: String, items: [Item])] = []
+        for item in items {
+            let name = groupName(item)
+            if let index = sections.firstIndex(where: { $0.name == name }) {
+                sections[index].items.append(item)
+            } else {
+                sections.append((name: name, items: [item]))
+            }
+        }
+        return sections
     }
 
     var body: some View {

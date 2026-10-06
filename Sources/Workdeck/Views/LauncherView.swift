@@ -11,6 +11,7 @@ struct LauncherView: View {
     @State private var scanRoots: [URL] = []
     @State private var projects: [Project] = []
     @State private var expandedProjectIDs: Set<URL> = []
+    @State private var openCounts: [String: Int] = [:]
     @State private var gitStatuses: [URL: GitStatus] = [:]
     @State private var gitRemoteURLs: [URL: URL] = [:]
     @State private var gitStatusTask: Task<Void, Never>?
@@ -37,7 +38,7 @@ struct LauncherView: View {
     }
 
     private var visibleProjects: [Project] {
-        projects.filter { isVisible(root: $0.root, searchText: $0.searchText) }
+        rankedByUsage(projects.filter { isVisible(root: $0.root, searchText: $0.searchText) })
     }
 
     var body: some View {
@@ -82,6 +83,12 @@ struct LauncherView: View {
             Divider()
 
             Button("Add Folder…", action: addScanRoots)
+            Menu("Move Folder to Top") {
+                ForEach(scanRoots.dropFirst(), id: \.self) { root in
+                    Button((root.path as NSString).abbreviatingWithTildeInPath) { moveScanRootToTop(root) }
+                }
+            }
+            .disabled(scanRoots.count < 2)
             Menu("Remove Folder") {
                 ForEach(scanRoots, id: \.self) { root in
                     Button((root.path as NSString).abbreviatingWithTildeInPath) { removeScanRoot(root) }
@@ -209,12 +216,37 @@ struct LauncherView: View {
         return matchesRoot && matchesQuery
     }
 
+    private func rankedByUsage(_ projects: [Project]) -> [Project] {
+        let rootOrder = Dictionary(uniqueKeysWithValues: scanRoots.enumerated().map { ($1.path, $0) })
+        let openCount = { (project: Project) in openCounts[project.url.standardizedFileURL.path] ?? 0 }
+        let groupKey = { (project: Project) in "\(project.root.path)/\(project.group)" }
+        let groupOpenCounts = Dictionary(grouping: projects, by: groupKey)
+            .mapValues { $0.reduce(0) { $0 + openCount($1) } }
+
+        return projects.sorted { lhs, rhs in
+            let lhsRootIndex = rootOrder[lhs.root.path] ?? .max
+            let rhsRootIndex = rootOrder[rhs.root.path] ?? .max
+            if lhsRootIndex != rhsRootIndex { return lhsRootIndex < rhsRootIndex }
+
+            let lhsGroupCount = groupOpenCounts[groupKey(lhs)] ?? 0
+            let rhsGroupCount = groupOpenCounts[groupKey(rhs)] ?? 0
+            if lhsGroupCount != rhsGroupCount { return lhsGroupCount > rhsGroupCount }
+            if lhs.group != rhs.group { return lhs.group.lowercased() < rhs.group.lowercased() }
+
+            let lhsCount = openCount(lhs)
+            let rhsCount = openCount(rhs)
+            if lhsCount != rhsCount { return lhsCount > rhsCount }
+            return lhs.name.lowercased() < rhs.name.lowercased()
+        }
+    }
+
     private func sectionName(group: String, root: URL) -> String {
         isShowingAllRoots && scanRoots.count > 1 ? "\(root.lastPathComponent) › \(group)" : group
     }
 
     private func reload() {
         scanRoots = ScanRoots.all
+        openCounts = ProjectUsage.openCounts
         if !scanRoots.contains(where: { $0.path == selectedRootPath }) {
             selectedRootPath = Self.allRootsSelection
         }
@@ -237,6 +269,11 @@ struct LauncherView: View {
         NSApp.activate(ignoringOtherApps: true)
         guard panel.runModal() == .OK else { return }
         ScanRoots.add(panel.urls)
+        reload()
+    }
+
+    private func moveScanRootToTop(_ root: URL) {
+        ScanRoots.moveToTop(root)
         reload()
     }
 
@@ -372,6 +409,7 @@ struct LauncherView: View {
 
     private func open(_ url: URL) {
         WorkspaceOpener.open(url)
+        ProjectUsage.recordOpen(of: url)
         query = ""
         dismiss()
     }

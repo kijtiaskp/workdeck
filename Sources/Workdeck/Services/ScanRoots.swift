@@ -22,6 +22,10 @@ enum ScanRoots {
         save(all + newRoots)
     }
 
+    static func moveToTop(_ root: URL) {
+        save([root] + all.filter { $0 != root })
+    }
+
     static func remove(_ root: URL) {
         save(all.filter { $0 != root })
     }
